@@ -8,13 +8,18 @@ import { TaxGraphExplorer } from './components/TaxGraphExplorer';
 import { SecurityView } from './components/SecurityView';
 import { ComplianceOperationsCockpit } from './components/ComplianceOperationsCockpit';
 
-// Prompt 4 Role-Based Experience Views
+// Prompt 4 Role-Based Experience Views & Workstreams
 import { B2CTaxpayerView } from './components/ux/B2CTaxpayerView';
 import { TaxProfessionalView } from './components/ux/TaxProfessionalView';
 import { TaxAttorneyView } from './components/ux/TaxAttorneyView';
 import { OperationsManagerView } from './components/ux/OperationsManagerView';
 import { SuperAdminView } from './components/ux/SuperAdminView';
 import { B2BAdminView } from './components/ux/B2BAdminView';
+import { PartnerEmbeddedView } from './components/ux/PartnerEmbeddedView';
+import { CustomerSupportView } from './components/ux/CustomerSupportView';
+import { YearRoundPlanningView } from './components/ux/YearRoundPlanningView';
+import { MarketingLandingView } from './components/ux/MarketingLandingView';
+import { OnboardingModal } from './components/ux/OnboardingModal';
 
 import { UserRole, B2BSubscriptionTier, UserContext } from './types/security';
 import { EntitlementsGuard } from './services/EntitlementsGuard';
@@ -33,16 +38,25 @@ import {
   BarChart3,
   Sliders,
   Sparkles,
-  Building2
+  Building2,
+  Headphones,
+  Globe,
+  Compass,
+  Layers,
+  Zap
 } from 'lucide-react';
 
 export type ExperienceMode = 
   | 'B2C_TAXPAYER'
+  | 'YEAR_ROUND_PLANNING'
   | 'TAX_PRO_CPA'
   | 'TAX_ATTORNEY'
   | 'OPS_MANAGER'
-  | 'SUPER_ADMIN'
+  | 'CUSTOMER_SUPPORT'
   | 'B2B_FIRM_ADMIN'
+  | 'PARTNER_EMBEDDED'
+  | 'SUPER_ADMIN'
+  | 'MARKETING_LANDING'
   | 'MULTI_DOMAIN_ENGINE';
 
 export function App() {
@@ -50,6 +64,7 @@ export function App() {
   const [multiDomainTab, setMultiDomainTab] = useState<'OVERVIEW' | 'SALES_TAX' | 'PAYROLL_TAX' | 'INCOME_TAX' | 'COMPLIANCE_OPS' | 'GRAPH' | 'SECURITY'>('OVERVIEW');
   const [currentRole, setCurrentRole] = useState<UserRole>('CLIENT_OWNER');
   const [subscriptionTier, setSubscriptionTier] = useState<B2BSubscriptionTier>('FULL_TAX_OS');
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
 
   // Bidirectional Role & Experience Switcher Synchronizer
   const handleSelectRoleFromHeader = (role: UserRole) => {
@@ -71,13 +86,21 @@ export function App() {
 
   const handleSelectExperienceMode = (mode: ExperienceMode) => {
     setExperienceMode(mode);
-    if (mode === 'B2C_TAXPAYER') setCurrentRole('CLIENT_OWNER');
-    else if (mode === 'TAX_PRO_CPA') setCurrentRole('EXTERNAL_CPA_REVIEWER');
-    else if (mode === 'TAX_ATTORNEY') setCurrentRole('ATTORNEY_LEGAL_COUNSEL');
-    else if (mode === 'OPS_MANAGER') setCurrentRole('CFO_FINANCE_DIRECTOR');
-    else if (mode === 'SUPER_ADMIN') setCurrentRole('EXTERNAL_CPA_REVIEWER');
-    else if (mode === 'B2B_FIRM_ADMIN') setCurrentRole('CFO_FINANCE_DIRECTOR');
-    else if (mode === 'MULTI_DOMAIN_ENGINE') setCurrentRole('CLIENT_OWNER');
+    if (mode === 'B2C_TAXPAYER' || mode === 'YEAR_ROUND_PLANNING' || mode === 'MARKETING_LANDING') {
+      setCurrentRole('CLIENT_OWNER');
+    } else if (mode === 'TAX_PRO_CPA') {
+      setCurrentRole('EXTERNAL_CPA_REVIEWER');
+    } else if (mode === 'TAX_ATTORNEY') {
+      setCurrentRole('ATTORNEY_LEGAL_COUNSEL');
+    } else if (mode === 'OPS_MANAGER' || mode === 'CUSTOMER_SUPPORT') {
+      setCurrentRole('CFO_FINANCE_DIRECTOR');
+    } else if (mode === 'SUPER_ADMIN') {
+      setCurrentRole('EXTERNAL_CPA_REVIEWER');
+    } else if (mode === 'B2B_FIRM_ADMIN' || mode === 'PARTNER_EMBEDDED') {
+      setCurrentRole('CFO_FINANCE_DIRECTOR');
+    } else if (mode === 'MULTI_DOMAIN_ENGINE') {
+      setCurrentRole('CLIENT_OWNER');
+    }
   };
 
   // Derive tenant entitlements & current user context dynamically
@@ -107,15 +130,18 @@ export function App() {
 
       {/* Master Role-Based Experience Switcher Bar */}
       <div className="bg-slate-900/90 border-b border-slate-800 px-6 py-2.5 sticky top-[65px] z-40 backdrop-blur">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 overflow-x-auto">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 overflow-x-auto">
+          
           <div className="flex items-center gap-1.5 shrink-0 text-xs text-slate-400 font-semibold mr-1">
-            <span className="text-[11px] uppercase tracking-wider text-slate-500">Role View:</span>
+            <span className="text-[11px] uppercase tracking-wider text-slate-500">Dashboards:</span>
           </div>
 
           <div className="flex items-center gap-2 overflow-x-auto py-1">
+            
+            {/* 1. B2C Taxpayer */}
             <button
               onClick={() => handleSelectExperienceMode('B2C_TAXPAYER')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 ${
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 ${
                 experienceMode === 'B2C_TAXPAYER'
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 ring-1 ring-blue-400'
                   : 'text-slate-300 hover:text-white bg-slate-950/70 hover:bg-slate-800 border border-slate-800'
@@ -126,9 +152,24 @@ export function App() {
               <span className="px-1.5 py-0.2 rounded text-[10px] bg-blue-400/20 text-blue-200">92% Ready</span>
             </button>
 
+            {/* 2. Year-Round & Tax Twin */}
+            <button
+              onClick={() => handleSelectExperienceMode('YEAR_ROUND_PLANNING')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 ${
+                experienceMode === 'YEAR_ROUND_PLANNING'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 ring-1 ring-blue-400'
+                  : 'text-slate-300 hover:text-white bg-slate-950/70 hover:bg-slate-800 border border-slate-800'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span>Tax Twin & Planning</span>
+              <span className="px-1.5 py-0.2 rounded text-[10px] bg-emerald-400/20 text-emerald-200">2026 Sim</span>
+            </button>
+
+            {/* 3. Tax Pro (CPA/EA) */}
             <button
               onClick={() => handleSelectExperienceMode('TAX_PRO_CPA')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 ${
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 ${
                 experienceMode === 'TAX_PRO_CPA'
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 ring-1 ring-blue-400'
                   : 'text-slate-300 hover:text-white bg-slate-950/70 hover:bg-slate-800 border border-slate-800'
@@ -139,22 +180,24 @@ export function App() {
               <span className="px-1.5 py-0.2 rounded text-[10px] bg-amber-400/20 text-amber-200">Review Brief</span>
             </button>
 
+            {/* 4. Controversy Attorney */}
             <button
               onClick={() => handleSelectExperienceMode('TAX_ATTORNEY')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 ${
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 ${
                 experienceMode === 'TAX_ATTORNEY'
                   ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 ring-1 ring-purple-400'
                   : 'text-slate-300 hover:text-white bg-slate-950/70 hover:bg-slate-800 border border-slate-800'
               }`}
             >
               <Scale className="w-3.5 h-3.5" />
-              <span>Controversy Attorney</span>
+              <span>Tax Attorney</span>
               <span className="px-1.5 py-0.2 rounded text-[10px] bg-purple-400/20 text-purple-200">Privileged</span>
             </button>
 
+            {/* 5. Operations Manager */}
             <button
               onClick={() => handleSelectExperienceMode('OPS_MANAGER')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 ${
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 ${
                 experienceMode === 'OPS_MANAGER'
                   ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30 ring-1 ring-amber-400'
                   : 'text-slate-300 hover:text-white bg-slate-950/70 hover:bg-slate-800 border border-slate-800'
@@ -162,12 +205,53 @@ export function App() {
             >
               <BarChart3 className="w-3.5 h-3.5" />
               <span>Operations Manager</span>
-              <span className="px-1.5 py-0.2 rounded text-[10px] bg-amber-400/20 text-amber-200">QtF 2.4</span>
+              <span className="px-1.5 py-0.2 rounded text-[10px] bg-amber-400/20 text-amber-200">Pods</span>
             </button>
 
+            {/* 6. Customer Support */}
+            <button
+              onClick={() => handleSelectExperienceMode('CUSTOMER_SUPPORT')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 ${
+                experienceMode === 'CUSTOMER_SUPPORT'
+                  ? 'bg-sky-600 text-white shadow-md shadow-sky-600/30 ring-1 ring-sky-400'
+                  : 'text-slate-300 hover:text-white bg-slate-950/70 hover:bg-slate-800 border border-slate-800'
+              }`}
+            >
+              <Headphones className="w-3.5 h-3.5" />
+              <span>Customer Support</span>
+              <span className="px-1.5 py-0.2 rounded text-[10px] bg-sky-400/20 text-sky-200">Masked</span>
+            </button>
+
+            {/* 7. Firm Admin */}
+            <button
+              onClick={() => handleSelectExperienceMode('B2B_FIRM_ADMIN')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 ${
+                experienceMode === 'B2B_FIRM_ADMIN'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 ring-1 ring-blue-400'
+                  : 'text-slate-300 hover:text-white bg-slate-950/70 hover:bg-slate-800 border border-slate-800'
+              }`}
+            >
+              <Building2 className="w-3.5 h-3.5" />
+              <span>Firm Admin</span>
+            </button>
+
+            {/* 8. Partner / Embedded */}
+            <button
+              onClick={() => handleSelectExperienceMode('PARTNER_EMBEDDED')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 ${
+                experienceMode === 'PARTNER_EMBEDDED'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-1 ring-indigo-400'
+                  : 'text-slate-300 hover:text-white bg-slate-950/70 hover:bg-slate-800 border border-slate-800'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>Partner / Embedded</span>
+            </button>
+
+            {/* 9. Super Admin */}
             <button
               onClick={() => handleSelectExperienceMode('SUPER_ADMIN')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 ${
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 ${
                 experienceMode === 'SUPER_ADMIN'
                   ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30 ring-1 ring-rose-400'
                   : 'text-slate-300 hover:text-white bg-slate-950/70 hover:bg-slate-800 border border-slate-800'
@@ -178,24 +262,25 @@ export function App() {
               <span className="px-1.5 py-0.2 rounded text-[10px] bg-rose-400/20 text-rose-200">Kill Switches</span>
             </button>
 
+            {/* 10. Marketing & Conversion */}
             <button
-              onClick={() => handleSelectExperienceMode('B2B_FIRM_ADMIN')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 ${
-                experienceMode === 'B2B_FIRM_ADMIN'
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 ring-1 ring-blue-400'
+              onClick={() => handleSelectExperienceMode('MARKETING_LANDING')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 ${
+                experienceMode === 'MARKETING_LANDING'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 ring-1 ring-emerald-400'
                   : 'text-slate-300 hover:text-white bg-slate-950/70 hover:bg-slate-800 border border-slate-800'
               }`}
             >
-              <Building2 className="w-3.5 h-3.5" />
-              <span>Firm Admin</span>
-              <span className="px-1.5 py-0.2 rounded text-[10px] bg-slate-800 text-slate-300">Policies</span>
+              <Globe className="w-3.5 h-3.5" />
+              <span>Marketing & Tour</span>
             </button>
 
             <div className="h-4 w-[1px] bg-slate-700 mx-1 shrink-0" />
 
+            {/* 11. Multi-Domain Engine */}
             <button
               onClick={() => handleSelectExperienceMode('MULTI_DOMAIN_ENGINE')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 ${
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 ${
                 experienceMode === 'MULTI_DOMAIN_ENGINE'
                   ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 ring-1 ring-emerald-400'
                   : 'text-slate-300 hover:text-white bg-slate-950/70 hover:bg-slate-800 border border-slate-800'
@@ -205,7 +290,18 @@ export function App() {
               <span>Multi-Domain Engine</span>
               <span className="px-1.5 py-0.2 rounded text-[10px] bg-emerald-400/20 text-emerald-200">Sales/Payroll</span>
             </button>
+
           </div>
+
+          {/* Quick Onboarding Launcher Button */}
+          <button
+            onClick={() => setIsOnboardingOpen(true)}
+            className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white transition flex items-center gap-1.5 shrink-0 shadow-md shadow-blue-600/20"
+          >
+            <Compass className="w-3.5 h-3.5" />
+            <span>Onboarding Wizard</span>
+          </button>
+
         </div>
       </div>
 
@@ -310,6 +406,10 @@ export function App() {
             <B2CTaxpayerView />
           )}
 
+          {experienceMode === 'YEAR_ROUND_PLANNING' && (
+            <YearRoundPlanningView />
+          )}
+
           {experienceMode === 'TAX_PRO_CPA' && (
             <TaxProfessionalView />
           )}
@@ -322,12 +422,28 @@ export function App() {
             <OperationsManagerView />
           )}
 
-          {experienceMode === 'SUPER_ADMIN' && (
-            <SuperAdminView />
+          {experienceMode === 'CUSTOMER_SUPPORT' && (
+            <CustomerSupportView />
           )}
 
           {experienceMode === 'B2B_FIRM_ADMIN' && (
             <B2BAdminView />
+          )}
+
+          {experienceMode === 'PARTNER_EMBEDDED' && (
+            <PartnerEmbeddedView />
+          )}
+
+          {experienceMode === 'SUPER_ADMIN' && (
+            <SuperAdminView />
+          )}
+
+          {experienceMode === 'MARKETING_LANDING' && (
+            <MarketingLandingView
+              onStartFiling={() => handleSelectExperienceMode('B2C_TAXPAYER')}
+              onOpenOnboarding={() => setIsOnboardingOpen(true)}
+              onSwitchToPro={() => handleSelectExperienceMode('TAX_PRO_CPA')}
+            />
           )}
 
           {experienceMode === 'MULTI_DOMAIN_ENGINE' && (
@@ -371,6 +487,15 @@ export function App() {
             </>
           )}
         </main>
+
+        {/* Interactive Onboarding Modal */}
+        <OnboardingModal
+          isOpen={isOnboardingOpen}
+          onClose={() => setIsOnboardingOpen(false)}
+          onComplete={() => {
+            handleSelectExperienceMode('B2C_TAXPAYER');
+          }}
+        />
 
         {/* Footer */}
         <footer className="mt-12 pt-6 border-t border-slate-800/80 text-center text-xs text-slate-500 flex flex-col md:flex-row items-center justify-between gap-2">

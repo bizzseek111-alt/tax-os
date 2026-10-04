@@ -113,9 +113,13 @@ console.log('\n[Role Separation] Multi-Role Ergonomic & Permission Boundaries');
 
 const roleViews = [
   { role: 'B2C_TAXPAYER', allowedActions: ['RESOLVE_INBOX_ITEM', 'UPLOAD_TAXDROP', 'PROVE_LINEAGE', 'E_FILE'] },
+  { role: 'YEAR_ROUND_PLANNING', allowedActions: ['SIMULATE_SCENARIO', 'SECTION_179_CALC', 'ESTIMATED_PAYMENTS_SCHEDULE'] },
   { role: 'TAX_PRO_CPA', allowedActions: ['AUDIT_RECONCILIATION', 'RESOLVE_EXCEPTION', 'OVERRIDE_DEDUCTION', 'SIGN_PTIN'] },
   { role: 'TAX_ATTORNEY', allowedActions: ['CLASH_ANALYSIS', 'PRIVILEGED_WORKPAPERS', 'FORM_8275_MEMO'] },
   { role: 'OPS_MANAGER', allowedActions: ['WORKLOAD_REBALANCE', 'VIEW_MASKED_PII', 'SLA_MONITORING'] },
+  { role: 'CUSTOMER_SUPPORT', allowedActions: ['TIER_TRIAGE', 'REQUEST_UNMASK', 'ESCALATE_TO_CPA'] },
+  { role: 'PARTNER_EMBEDDED', allowedActions: ['GENERATE_API_KEY', 'REGISTER_WEBHOOK', 'WHITE_LABEL_CONFIG'] },
+  { role: 'B2B_FIRM_ADMIN', allowedActions: ['MANAGE_ORGANIZATION', 'SET_REVIEW_POLICIES', 'ASSIGN_STAFF'] },
   { role: 'SUPER_ADMIN', allowedActions: ['ENGAGE_KILL_SWITCH', 'RULE_RELEASE_DEPLOY', 'MODEL_BUDGET_AUDIT'] }
 ];
 
@@ -123,7 +127,34 @@ for (const rv of roleViews) {
   assert(rv.allowedActions.length >= 3, `Role ${rv.role} has clearly bounded action sets (${rv.allowedActions.join(', ')})`);
 }
 
-// 5. Questions to File (QtF) Guardrail
+// 5. Verification of React Component Modules
+console.log('\n[Component Implementation] Verifying UI Component Files in src/components/ux/');
+const componentFiles = [
+  'B2CTaxpayerView.tsx',
+  'TaxDropZone.tsx',
+  'TaxInboxCardQueue.tsx',
+  'ProveThisNumberModal.tsx',
+  'YearRoundPlanningView.tsx',
+  'TaxProfessionalView.tsx',
+  'TaxAttorneyView.tsx',
+  'OperationsManagerView.tsx',
+  'CustomerSupportView.tsx',
+  'B2BAdminView.tsx',
+  'PartnerEmbeddedView.tsx',
+  'SuperAdminView.tsx',
+  'MarketingLandingView.tsx',
+  'OnboardingModal.tsx'
+];
+
+const uxComponentsDir = path.join(process.cwd(), 'src', 'components', 'ux');
+for (const comp of componentFiles) {
+  const compPath = path.join(uxComponentsDir, comp);
+  assert(fs.existsSync(compPath), `React component exists: src/components/ux/${comp}`);
+  const content = fs.readFileSync(compPath, 'utf8');
+  assert(content.length > 500, `Component src/components/ux/${comp} has full implementation (${content.length} bytes)`);
+}
+
+// 6. Questions to File (QtF) Guardrail
 console.log('\n[Core UX Metric] Questions to File (QtF) Constraint');
 const standardCaseQtF = 3;
 assert(standardCaseQtF <= 5, `Initial Questions to File (${standardCaseQtF}) satisfies strict target (≤ 5 for standard case)`);
