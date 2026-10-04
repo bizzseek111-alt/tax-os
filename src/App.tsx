@@ -51,6 +51,35 @@ export function App() {
   const [currentRole, setCurrentRole] = useState<UserRole>('CLIENT_OWNER');
   const [subscriptionTier, setSubscriptionTier] = useState<B2BSubscriptionTier>('FULL_TAX_OS');
 
+  // Bidirectional Role & Experience Switcher Synchronizer
+  const handleSelectRoleFromHeader = (role: UserRole) => {
+    setCurrentRole(role);
+    if (role === 'EXTERNAL_CPA_REVIEWER' || role === 'INCOME_TAX_PREPARER') {
+      setExperienceMode('TAX_PRO_CPA');
+    } else if (role === 'ATTORNEY_LEGAL_COUNSEL') {
+      setExperienceMode('TAX_ATTORNEY');
+    } else if (role === 'CFO_FINANCE_DIRECTOR') {
+      setExperienceMode('OPS_MANAGER');
+    } else if (role === 'CLIENT_OWNER') {
+      setExperienceMode('B2C_TAXPAYER');
+    } else if (role === 'PAYROLL_ADMIN' || role === 'SALES_TAX_SPECIALIST') {
+      setExperienceMode('MULTI_DOMAIN_ENGINE');
+      if (role === 'PAYROLL_ADMIN') setMultiDomainTab('PAYROLL_TAX');
+      if (role === 'SALES_TAX_SPECIALIST') setMultiDomainTab('SALES_TAX');
+    }
+  };
+
+  const handleSelectExperienceMode = (mode: ExperienceMode) => {
+    setExperienceMode(mode);
+    if (mode === 'B2C_TAXPAYER') setCurrentRole('CLIENT_OWNER');
+    else if (mode === 'TAX_PRO_CPA') setCurrentRole('EXTERNAL_CPA_REVIEWER');
+    else if (mode === 'TAX_ATTORNEY') setCurrentRole('ATTORNEY_LEGAL_COUNSEL');
+    else if (mode === 'OPS_MANAGER') setCurrentRole('CFO_FINANCE_DIRECTOR');
+    else if (mode === 'SUPER_ADMIN') setCurrentRole('EXTERNAL_CPA_REVIEWER');
+    else if (mode === 'B2B_FIRM_ADMIN') setCurrentRole('CFO_FINANCE_DIRECTOR');
+    else if (mode === 'MULTI_DOMAIN_ENGINE') setCurrentRole('CLIENT_OWNER');
+  };
+
   // Derive tenant entitlements & current user context dynamically
   const tenant = EntitlementsGuard.createTenantEntitlements(
     'tenant-apex-2027',
@@ -70,7 +99,7 @@ export function App() {
       {/* Top Header */}
       <Header
         currentUser={currentUser}
-        onSelectRole={setCurrentRole}
+        onSelectRole={handleSelectRoleFromHeader}
         subscriptionTier={subscriptionTier}
         onSelectTier={setSubscriptionTier}
         businessName={MOCK_BUSINESS.name}
@@ -85,7 +114,7 @@ export function App() {
 
           <div className="flex items-center gap-2 overflow-x-auto py-1">
             <button
-              onClick={() => setExperienceMode('B2C_TAXPAYER')}
+              onClick={() => handleSelectExperienceMode('B2C_TAXPAYER')}
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 ${
                 experienceMode === 'B2C_TAXPAYER'
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 ring-1 ring-blue-400'
@@ -98,7 +127,7 @@ export function App() {
             </button>
 
             <button
-              onClick={() => setExperienceMode('TAX_PRO_CPA')}
+              onClick={() => handleSelectExperienceMode('TAX_PRO_CPA')}
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 ${
                 experienceMode === 'TAX_PRO_CPA'
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 ring-1 ring-blue-400'
@@ -111,7 +140,7 @@ export function App() {
             </button>
 
             <button
-              onClick={() => setExperienceMode('TAX_ATTORNEY')}
+              onClick={() => handleSelectExperienceMode('TAX_ATTORNEY')}
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 ${
                 experienceMode === 'TAX_ATTORNEY'
                   ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 ring-1 ring-purple-400'
@@ -124,7 +153,7 @@ export function App() {
             </button>
 
             <button
-              onClick={() => setExperienceMode('OPS_MANAGER')}
+              onClick={() => handleSelectExperienceMode('OPS_MANAGER')}
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 ${
                 experienceMode === 'OPS_MANAGER'
                   ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30 ring-1 ring-amber-400'
@@ -137,7 +166,7 @@ export function App() {
             </button>
 
             <button
-              onClick={() => setExperienceMode('SUPER_ADMIN')}
+              onClick={() => handleSelectExperienceMode('SUPER_ADMIN')}
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 ${
                 experienceMode === 'SUPER_ADMIN'
                   ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30 ring-1 ring-rose-400'
@@ -150,7 +179,7 @@ export function App() {
             </button>
 
             <button
-              onClick={() => setExperienceMode('B2B_FIRM_ADMIN')}
+              onClick={() => handleSelectExperienceMode('B2B_FIRM_ADMIN')}
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 ${
                 experienceMode === 'B2B_FIRM_ADMIN'
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 ring-1 ring-blue-400'
@@ -165,7 +194,7 @@ export function App() {
             <div className="h-4 w-[1px] bg-slate-700 mx-1 shrink-0" />
 
             <button
-              onClick={() => setExperienceMode('MULTI_DOMAIN_ENGINE')}
+              onClick={() => handleSelectExperienceMode('MULTI_DOMAIN_ENGINE')}
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 ${
                 experienceMode === 'MULTI_DOMAIN_ENGINE'
                   ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 ring-1 ring-emerald-400'
@@ -335,7 +364,7 @@ export function App() {
                 <SecurityView
                   currentRole={currentRole}
                   subscriptionTier={subscriptionTier}
-                  onSelectRole={setCurrentRole}
+                  onSelectRole={handleSelectRoleFromHeader}
                   onSelectTier={setSubscriptionTier}
                 />
               )}

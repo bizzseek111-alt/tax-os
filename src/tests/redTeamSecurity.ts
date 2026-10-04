@@ -50,9 +50,9 @@ export class RedTeamSecurityTester {
    * Tenant Apex attempts to read TaxCase or Evidence from Tenant Horizon.
    */
   public static testCrossTenantBleed(): RedTeamTestResult {
-    const tenantA = 'tenant-apex-firm-101';
-    const tenantB = 'tenant-horizon-firm-202';
-    const resourceTenantId = tenantB;
+    const tenantA: string = 'tenant-apex-firm-101';
+    const tenantB: string = 'tenant-horizon-firm-202';
+    const resourceTenantId: string = tenantB;
 
     let accessDenied = false;
     let violationMessage = '';

@@ -14,13 +14,45 @@ import {
   Send,
   Building2,
   Calendar,
-  AlertTriangle
+  AlertTriangle,
+  Search,
+  Check
 } from 'lucide-react';
 import { TaxDropZone } from './TaxDropZone';
 import { TaxInboxCardQueue } from './TaxInboxCardQueue';
 import { ProveThisNumberModal, ProvenanceNode } from './ProveThisNumberModal';
 
 const PROVENANCE_DATA_MAP: Record<string, ProvenanceNode> = {
+  GROSS_INCOME: {
+    id: 'prov-00',
+    label: 'Total Gross Income (Form 1040 Line 9)',
+    amount: 148200,
+    formLine: 'Form 1040 Line 9',
+    authorityCitation: '26 U.S.C. § 61',
+    authorityTitle: 'Gross Income Defined (All Income from Whatever Source Derived)',
+    precedentialStatus: 'BINDING_PRIMARY_STATUTE',
+    plainEnglishReason: 'Your total gross income represents all taxable revenues received during tax year 2026. This includes $56,200 in W-2 wages from employer Acme Labs and $92,000 in independent consulting compensation reported on Form 1040 Schedule C. Deduplicated against bank transfers to eliminate double-counting.',
+    transactions: [
+      {
+        id: 'tx-w2',
+        date: '2026-12-31',
+        vendor: 'Acme Labs Inc. (W-2 Employer)',
+        description: 'Box 1 Wages, Tips, Other Compensation',
+        amount: 56200,
+        receiptHash: 'sha256:5a9d8c7b6a5f4e3d2c1b0a9f8e7d6c5b4a3f2e1d',
+        receiptFile: 'Form_W2_Acme_Labs_2026.pdf'
+      },
+      {
+        id: 'tx-nec',
+        date: '2026-12-31',
+        vendor: 'Horizon Fintech Corp (1099-NEC Client)',
+        description: 'Box 1 Nonemployee Consulting Compensation',
+        amount: 92000,
+        receiptHash: 'sha256:7a3d11b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8',
+        receiptFile: 'Form_1099_NEC_Horizon_2026.pdf'
+      }
+    ]
+  },
   SCHEDULE_C_EXPENSES: {
     id: 'prov-01',
     label: 'Schedule C Other Business Expenses',
@@ -102,9 +134,10 @@ export function B2CTaxpayerView() {
   const [questionsCount, setQuestionsCount] = useState(3);
   const [selectedProvenance, setSelectedProvenance] = useState<ProvenanceNode | null>(null);
   const [showAiAssistant, setShowAiAssistant] = useState(false);
-  const [aiAssistantQuery, setAiAssistantQuery] = useState('');
+  const [aiAssistantInput, setAiAssistantInput] = useState('');
   const [aiAssistantAnswer, setAiAssistantAnswer] = useState<string | null>(null);
   const [eFileSubmitted, setEFileSubmitted] = useState(false);
+  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
 
   const handleResolveInboxItem = (id: string, outcome: string) => {
     setQuestionsCount(prev => Math.max(0, prev - 1));
@@ -113,26 +146,62 @@ export function B2CTaxpayerView() {
     // Dynamic math updates based on resolved tax facts
     if (outcome.includes('100_BUSINESS')) {
       setFederalRefund(prev => prev + 142);
+      triggerToast('Confirmed $412.50 business travel deduction under 26 U.S.C. § 162 (+ $142 Federal refund)');
     } else if (outcome.includes('HOME_OFFICE')) {
       setFederalRefund(prev => prev + 326);
+      triggerToast('Claimed $1,100 Home Office deduction under 26 U.S.C. § 280A (+ $326 Federal refund)');
+    } else if (outcome.includes('ZERO_NET_GAIN') || outcome.includes('CONNECT')) {
+      triggerToast('Brokerage cost basis reconciled. Zero CP2000 discrepancy risk.');
     }
   };
 
+  const triggerToast = (msg: string) => {
+    setActionFeedback(msg);
+    setTimeout(() => setActionFeedback(null), 3500);
+  };
+
   const handleAskAssistant = (queryText: string) => {
-    setAiAssistantQuery(queryText);
-    if (queryText.includes('California') || queryText.includes('1,840') || queryText.includes('owe')) {
-      setAiAssistantAnswer(
-        "You owe California $1,840 primarily because California does not conform to the Federal HSA tax deduction under Cal. RTC § 17215.4. Your $4,150 HSA contribution is added back to California taxable income (adding $386 in state tax). In addition, your state tax bracket is 9.3% on $119,750 of taxable income, and California does not allow the 20% Qualified Business Income (QBI) deduction under IRC § 199A."
-      );
+    const q = queryText.toLowerCase();
+    let answer = "";
+
+    if (q.includes('california') || q.includes('1,840') || q.includes('owe') || q.includes('hsa')) {
+      answer = "You owe California $1,840 primarily because California does not conform to the Federal HSA tax deduction under Cal. RTC § 17215.4. Your $4,150 HSA contribution is added back to California taxable income (adding $386 in state tax). In addition, your state marginal tax bracket is 9.3% on $119,750 of taxable income, and California does not allow the 20% Qualified Business Income (QBI) deduction under IRC § 199A.";
+    } else if (q.includes('qbi') || q.includes('199a') || q.includes('business income')) {
+      answer = "Under 26 U.S.C. § 199A, eligible sole proprietors and pass-through business owners receive a 20% deduction against net qualified business income. Since your taxable income is below the $197,200 threshold, you qualify for the full 20% deduction on your $59,750 net Schedule C earnings ($11,950 total deduction). Note that California completely disallows this deduction on Form 540.";
+    } else if (q.includes('179') || q.includes('depreciation') || q.includes('server') || q.includes('hardware')) {
+      answer = "Under 26 U.S.C. § 179, the Federal government allows up to $1,220,000 of immediate equipment expensing for 2026. However, California strictly limits Section 179 expensing to $25,000 per year under Cal. RTC § 17255. Any equipment purchase exceeding $25,000 requires an addition modification on California Schedule CA.";
+    } else if (q.includes('remote') || q.includes('convenience') || q.includes('new york') || q.includes('ny') || q.includes('nj')) {
+      answer = "Under 20 NYCRR § 131.18, New York taxes all telecommuting wage earnings from an NYC employer unless working from home is an absolute necessity of the employer. New Jersey provides a resident credit under N.J.S.A. § 54A:4-1 with retaliatory convenience provisions. Our controversy attorney module can generate a Form 8275 disclosure to defend against double taxation.";
+    } else if (q.includes('home office') || q.includes('280a') || q.includes('sq ft')) {
+      answer = "Under 26 U.S.C. § 280A(c)(1), you can deduct a dedicated area used exclusively and regularly as your principal place of business. You may use either the Simplified Method ($5/sq ft up to 300 sq ft = $1,500 maximum) or the Actual Expense method prorated by home square footage.";
+    } else if (q.includes('meals') || q.includes('travel') || q.includes('274')) {
+      answer = "Under 26 U.S.C. § 274(n), ordinary business meals with clients are subject to a strict 50% statutory disallowance. Business lodging and airfare remain 100% deductible under IRC § 162(a)(2).";
     } else {
-      setAiAssistantAnswer(
-        "Under 26 U.S.C. § 162(a), all ordinary and necessary expenses paid or incurred in carrying on your trade or business are deductible. All figures in your return are supported by primary receipts stored in our cryptographic evidence vault."
-      );
+      answer = `Under 26 U.S.C. § 162(a), all ordinary and necessary expenses incurred in carrying on your trade or business are deductible. All figures in your return are supported by primary receipts stored in our cryptographic evidence vault with 100% calculation provenance.`;
     }
+
+    setAiAssistantAnswer(answer);
+  };
+
+  const handleCustomQuestionSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!aiAssistantInput.trim()) return;
+    handleAskAssistant(aiAssistantInput);
   };
 
   return (
     <div className="space-y-6">
+      {/* Toast Notification */}
+      {actionFeedback && (
+        <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between shadow-lg backdrop-blur">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <span>{actionFeedback}</span>
+          </div>
+          <span className="font-mono text-[10px] text-emerald-400">Recalculated</span>
+        </div>
+      )}
+
       {/* Hero Completion Card */}
       <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 border border-slate-800 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
@@ -236,10 +305,16 @@ export function B2CTaxpayerView() {
 
             <div className="divide-y divide-slate-800 border border-slate-800 rounded-xl overflow-hidden bg-slate-950">
               {/* Row 1: Gross Income */}
-              <div className="p-3.5 flex items-center justify-between text-xs hover:bg-slate-900/60 transition cursor-pointer">
+              <div 
+                onClick={() => setSelectedProvenance(PROVENANCE_DATA_MAP.GROSS_INCOME)}
+                className="p-3.5 flex items-center justify-between text-xs hover:bg-blue-500/5 transition cursor-pointer group"
+              >
                 <div>
-                  <div className="font-semibold text-slate-200">Total Gross Income (Form 1040 Line 9)</div>
-                  <div className="text-[11px] text-slate-400">W-2 + 1099-NEC consulting compensation</div>
+                  <div className="font-semibold text-slate-200 group-hover:text-blue-300 flex items-center gap-1.5">
+                    <span>Total Gross Income (Form 1040 Line 9)</span>
+                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">Prove 🔍</span>
+                  </div>
+                  <div className="text-[11px] text-slate-400">W-2 + 1099-NEC consulting compensation under 26 U.S.C. § 61</div>
                 </div>
                 <div className="text-right">
                   <div className="font-mono font-bold text-slate-100 tabular-nums text-sm">$148,200</div>
@@ -308,7 +383,7 @@ export function B2CTaxpayerView() {
         <div className="lg:col-span-5 space-y-6">
           <TaxDropZone />
 
-          {/* Contextual AI Explainer Widget */}
+          {/* Contextual AI Explainer Widget with Interactive Input */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -328,34 +403,59 @@ export function B2CTaxpayerView() {
               Ask any question about your numbers, deductions, or state rules. Answers cite exact statutes.
             </p>
 
-            <div className="space-y-2">
-              <div className="flex flex-wrap gap-1.5">
-                <button
-                  onClick={() => handleAskAssistant("Why do I owe California $1,840?")}
-                  className="px-2.5 py-1 rounded-lg text-[11px] bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800 transition"
-                >
-                  "Why do I owe California $1,840?"
-                </button>
-                <button
-                  onClick={() => handleAskAssistant("Are my AWS server costs 100% deductible?")}
-                  className="px-2.5 py-1 rounded-lg text-[11px] bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800 transition"
-                >
-                  "Are AWS costs deductible?"
-                </button>
-              </div>
-
-              {aiAssistantAnswer && (
-                <div className="p-4 rounded-xl bg-slate-950 border border-blue-500/30 text-xs space-y-2">
-                  <div className="font-semibold text-blue-300 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-400" />
-                    <span>Authoritative Answer</span>
-                  </div>
-                  <p className="text-slate-300 leading-relaxed">
-                    {aiAssistantAnswer}
-                  </p>
-                </div>
-              )}
+            {/* Quick Chips */}
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                onClick={() => handleAskAssistant("Why do I owe California $1,840?")}
+                className="px-2.5 py-1 rounded-lg text-[11px] bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800 transition"
+              >
+                "Why do I owe California $1,840?"
+              </button>
+              <button
+                onClick={() => handleAskAssistant("How is my QBI deduction calculated?")}
+                className="px-2.5 py-1 rounded-lg text-[11px] bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800 transition"
+              >
+                "How is QBI calculated?"
+              </button>
+              <button
+                onClick={() => handleAskAssistant("Are my AWS server costs 100% deductible?")}
+                className="px-2.5 py-1 rounded-lg text-[11px] bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800 transition"
+              >
+                "Are AWS costs deductible?"
+              </button>
             </div>
+
+            {/* Custom Question Form */}
+            <form onSubmit={handleCustomQuestionSubmit} className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={aiAssistantInput}
+                  onChange={(e) => setAiAssistantInput(e.target.value)}
+                  placeholder="Ask any tax question (e.g. 'What is the California 179 limit?')..."
+                  className="w-full pl-8 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                />
+                <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
+              </div>
+              <button
+                type="submit"
+                className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold transition shrink-0"
+              >
+                Ask AI
+              </button>
+            </form>
+
+            {aiAssistantAnswer && (
+              <div className="p-4 rounded-xl bg-slate-950 border border-blue-500/30 text-xs space-y-2">
+                <div className="font-semibold text-blue-300 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Authoritative Answer</span>
+                </div>
+                <p className="text-slate-300 leading-relaxed">
+                  {aiAssistantAnswer}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* E-File Ready Card */}
@@ -381,7 +481,10 @@ export function B2CTaxpayerView() {
             </div>
 
             <button
-              onClick={() => setEFileSubmitted(true)}
+              onClick={() => {
+                setEFileSubmitted(true);
+                triggerToast('Return successfully staged and queued for IRS & FTB electronic transmission!');
+              }}
               disabled={eFileSubmitted}
               className={`w-full py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition shadow-lg ${
                 eFileSubmitted

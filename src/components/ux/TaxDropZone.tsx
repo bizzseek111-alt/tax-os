@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   UploadCloud, 
   FileText, 
@@ -11,7 +11,8 @@ import {
   RefreshCw,
   Copy,
   Layers,
-  ShieldCheck
+  ShieldCheck,
+  FolderOpen
 } from 'lucide-react';
 
 export interface ProcessedDocument {
@@ -32,6 +33,8 @@ export function TaxDropZone({ onDocumentAdded }: TaxDropZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStage, setProcessingStage] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [recentDocs, setRecentDocs] = useState<ProcessedDocument[]>([
     {
       id: 'doc-001',
@@ -62,41 +65,73 @@ export function TaxDropZone({ onDocumentAdded }: TaxDropZoneProps) {
     }
   ]);
 
-  const handleSimulateDrop = (fileType: string) => {
+  const processIncomingFile = (fileName: string, fileSizeStr: string, fileTypeHint: string) => {
     setIsProcessing(true);
     setProcessingStage('1. Ingesting & SHA-256 Hashing...');
 
     setTimeout(() => {
       setProcessingStage('2. Multimodal OCR & Key-Value Parsing...');
-    }, 600);
+    }, 500);
 
     setTimeout(() => {
       setProcessingStage('3. Cross-Document Deduplication & Collision Audit...');
-    }, 1200);
+    }, 1000);
 
     setTimeout(() => {
       setProcessingStage('4. Matching Bank Transactions & Updating Tax Graph...');
-    }, 1800);
+    }, 1500);
 
     setTimeout(() => {
       setIsProcessing(false);
       setProcessingStage('');
+      const isDup = recentDocs.some(d => d.name === fileName);
       const newDoc: ProcessedDocument = {
         id: `doc-${Date.now().toString().slice(-4)}`,
-        name: fileType === 'RECEIPT' ? 'Delta_Airlines_Receipt_INV-9821.pdf' : 'Form_1040_PriorYear_2025.pdf',
-        type: fileType === 'RECEIPT' ? 'RECEIPT' : 'PRIOR_RETURN',
-        size: '1.2 MB',
+        name: fileName,
+        type: fileTypeHint === 'PRIOR_RETURN' ? 'PRIOR_RETURN' : 'RECEIPT',
+        size: fileSizeStr,
         hash: `sha256:${Math.random().toString(16).substring(2, 8)}...${Math.random().toString(16).substring(2, 6)}`,
-        status: 'PROCESSED',
-        extractedInfo: fileType === 'RECEIPT' ? '$412.50 Travel expense classified for Schedule C' : 'Prior depreciation schedule imported; carryover losses verified'
+        status: isDup ? 'DUPLICATE_REMOVED' : 'PROCESSED',
+        extractedInfo: isDup 
+          ? 'Duplicate artifact detected and bypassed; no duplicate expense hazard.' 
+          : fileTypeHint === 'PRIOR_RETURN' 
+            ? 'Prior depreciation schedule imported; carryover losses verified.' 
+            : 'Expense verified, vendor normalized, and bound to Schedule C Line 27.'
       };
       setRecentDocs(prev => [newDoc, ...prev]);
       if (onDocumentAdded) onDocumentAdded(newDoc);
-    }, 2400);
+    }, 2000);
+  };
+
+  const handleSimulateDrop = (fileType: string) => {
+    if (fileType === 'RECEIPT') {
+      processIncomingFile('Delta_Airlines_Receipt_INV-9821.pdf', '1.2 MB', 'RECEIPT');
+    } else {
+      processIncomingFile('Form_1040_PriorYear_2025.pdf', '3.4 MB', 'PRIOR_RETURN');
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      const sizeKb = Math.round(file.size / 1024);
+      const sizeStr = sizeKb > 1024 ? `${(sizeKb / 1024).toFixed(1)} MB` : `${sizeKb} KB`;
+      processIncomingFile(file.name, sizeStr, file.name.includes('1040') ? 'PRIOR_RETURN' : 'RECEIPT');
+    }
   };
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm">
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileSelect}
+        multiple
+        className="hidden"
+        accept=".pdf,.png,.jpg,.jpeg,.csv,.xlsx,.zip"
+      />
+
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2.5">
           <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
@@ -116,8 +151,8 @@ export function TaxDropZone({ onDocumentAdded }: TaxDropZoneProps) {
         </div>
 
         <div className="text-right hidden sm:block">
-          <span className="text-xs font-mono text-emerald-400 font-semibold block">37 Documents Ingested</span>
-          <span className="text-[11px] text-slate-500">1 Duplicate Automatically Eliminated</span>
+          <span className="text-xs font-mono text-emerald-400 font-semibold block">{recentDocs.length + 34} Documents Ingested</span>
+          <span className="text-[11px] text-slate-500">Auto-Deduplication Active</span>
         </div>
       </div>
 
@@ -125,7 +160,18 @@ export function TaxDropZone({ onDocumentAdded }: TaxDropZoneProps) {
       <div
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={() => setIsDragging(false)}
-        onDrop={(e) => { e.preventDefault(); setIsDragging(false); handleSimulateDrop('RECEIPT'); }}
+        onDrop={(e) => { 
+          e.preventDefault(); 
+          setIsDragging(false); 
+          if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            const f = e.dataTransfer.files[0];
+            const sizeKb = Math.round(f.size / 1024);
+            const sizeStr = sizeKb > 1024 ? `${(sizeKb / 1024).toFixed(1)} MB` : `${sizeKb} KB`;
+            processIncomingFile(f.name, sizeStr, 'RECEIPT');
+          } else {
+            handleSimulateDrop('RECEIPT'); 
+          }
+        }}
         className={`border-2 border-dashed rounded-xl p-6 sm:p-8 text-center transition cursor-pointer relative ${
           isDragging 
             ? 'border-blue-500 bg-blue-500/5' 
@@ -139,7 +185,7 @@ export function TaxDropZone({ onDocumentAdded }: TaxDropZoneProps) {
             </div>
             <div className="text-sm font-semibold text-slate-200">{processingStage}</div>
             <p className="text-xs text-slate-400 max-w-sm mx-auto">
-              Running deterministic OCR parsing and cross-referencing against existing tax case transactions...
+              Running deterministic OCR parsing, cryptographic hashing, and transaction cross-matching...
             </p>
           </div>
         ) : (
@@ -159,8 +205,16 @@ export function TaxDropZone({ onDocumentAdded }: TaxDropZoneProps) {
             <div className="pt-2 flex flex-wrap items-center justify-center gap-2">
               <button
                 type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition shadow-sm flex items-center gap-1.5"
+              >
+                <FolderOpen className="w-3.5 h-3.5" />
+                <span>Browse Files...</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => handleSimulateDrop('RECEIPT')}
-                className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium transition shadow-sm"
+                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition border border-slate-700"
               >
                 + Drop Delta Flight Receipt
               </button>
@@ -179,7 +233,7 @@ export function TaxDropZone({ onDocumentAdded }: TaxDropZoneProps) {
       {/* Ingested Documents List */}
       <div className="mt-5 space-y-2">
         <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center justify-between">
-          <span>Recently Ingested Artifacts</span>
+          <span>Recently Ingested Artifacts ({recentDocs.length})</span>
           <span className="text-[11px] text-slate-500">Auto-Encrypted AES-256</span>
         </div>
 

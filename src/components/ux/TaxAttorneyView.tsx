@@ -11,7 +11,8 @@ import {
   Calendar,
   ExternalLink,
   Download,
-  Check
+  Check,
+  Award
 } from 'lucide-react';
 
 interface LegalMatter {
@@ -28,16 +29,19 @@ interface LegalMatter {
     jurisdiction: string;
   }>;
   legalQuestion: string;
-  status: 'UNDER_LEGAL_ASSESSMENT' | 'MEMO_PREPARED' | 'APPROVED_WITH_DISCLOSURE';
+  defaultAssessment: string;
+  workpapers: string[];
+  memoDraft: string;
 }
 
 export function TaxAttorneyView() {
   const [selectedMatterId, setSelectedMatterId] = useState<string>('matter-01');
   const [activeTab, setActiveTab] = useState<'ANALYSIS' | 'WORKPAPERS' | 'MEMO'>('ANALYSIS');
-  const [attorneyAssessment, setAttorneyAssessment] = useState(
-    'Under Zelinsky v. Tax Appeals Tribunal and New York Regulation 20 NYCRR § 131.18, New York asserts sovereign taxing jurisdiction over wage income earned while working remotely for an NYC employer unless the remote office was established for the employer\'s bona fide necessity rather than employee convenience. However, under N.J.S.A. 54A:4-1 and recent 2023 retaliatory convenience legislation, New Jersey provides a resident credit offset. Recommend filing NY Form IT-203 Nonresident return reporting NYC-sourced wages while attaching Form 8275 to preserve substantive position and eliminate negligence penalties under IRC § 6662.'
-  );
-  const [memoApproved, setMemoApproved] = useState(false);
+  const [assessments, setAssessments] = useState<Record<string, string>>({
+    'matter-01': 'Under Zelinsky v. Tax Appeals Tribunal and New York Regulation 20 NYCRR § 131.18, New York asserts sovereign taxing jurisdiction over wage income earned while working remotely for an NYC employer unless the remote office was established for the employer\'s bona fide necessity rather than employee convenience. However, under N.J.S.A. 54A:4-1 and recent 2023 retaliatory convenience legislation, New Jersey provides a resident credit offset. Recommend filing NY Form IT-203 Nonresident return reporting NYC-sourced wages while attaching Form 8275 to preserve substantive position and eliminate negligence penalties under IRC § 6662.',
+    'matter-02': 'Under California Labor Code § 2775 (AB 5) and Dynamex Operations West v. Superior Court, worker classification is presumptively employment unless all three prongs of the ABC test are satisfied. However, taxpayer satisfies the Business-to-Business statutory exemption under Cal. Labor Code § 2776: maintaining independent business licensing, separate commercial premises, distinct contracts with multiple clients, and substantial equipment capital investment ($65,000 server infrastructure). Recommend defending 1099 independent contractor classification under the Borello multi-factor standard.'
+  });
+  const [sealedMatters, setSealedMatters] = useState<Record<string, boolean>>({});
 
   const matters: LegalMatter[] = [
     {
@@ -61,7 +65,13 @@ export function TaxAttorneyView() {
         }
       ],
       legalQuestion: 'Does the taxpayer\'s 42 remote workdays in Jersey City for a Manhattan financial consulting firm trigger double taxation, or does the NJ resident credit fully mitigate exposure?',
-      status: 'UNDER_LEGAL_ASSESSMENT'
+      defaultAssessment: 'Under Zelinsky v. Tax Appeals Tribunal and New York Regulation 20 NYCRR § 131.18...',
+      workpapers: [
+        '[2026-10-02 14:15] Initial interview conducted regarding telecommuter employer domicile.',
+        '[2026-10-03 09:30] Client confirmed employer does not maintain a registered office in NJ.',
+        '[2026-10-04 11:00] Recommended attaching Form 8275 to Form IT-203 with full disclosure statement.'
+      ],
+      memoDraft: 'MEMORANDUM OF SUBSTANTIAL AUTHORITY & TAX POSITION DISCLOSURE\nTO: Case File CASE-2026-NY-NJ-ROSTOVA\nRE: Position under 20 NYCRR § 131.18 and IRC § 6662 Penalty Defense\n\nTaxpayer takes the position that wage compensation earned while physically situated outside New York State is properly apportioned based on working days outside the state in accordance with the Due Process and Dormant Commerce Clauses of the United States Constitution.'
     },
     {
       id: 'matter-02',
@@ -78,17 +88,39 @@ export function TaxAttorneyView() {
           jurisdiction: 'US-CA'
         },
         {
-          citation: 'Cal. RTC § 18622',
-          description: 'California Assessment and Audit Powers',
+          citation: 'Cal. Labor Code § 2776',
+          description: 'B2B Statutory Contracting Exemption to Dynamex ABC Test',
           jurisdiction: 'US-CA'
         }
       ],
       legalQuestion: 'Does the taxpayer qualify under the Business-to-Business statutory contracting exemption under Cal. Labor Code § 2776?',
-      status: 'UNDER_LEGAL_ASSESSMENT'
+      defaultAssessment: 'Under California Labor Code § 2775 (AB 5) and Dynamex...',
+      workpapers: [
+        '[2026-10-01 10:00] FTB desk audit inquiry received regarding contractor 1099 expense reclassification.',
+        '[2026-10-03 16:20] Verified client LLC registration with CA Secretary of State and separate commercial lease.',
+        '[2026-10-04 13:45] Compiled Borello 12-factor independence questionnaire.'
+      ],
+      memoDraft: 'CALIFORNIA FRANCHISE TAX BOARD DEFENSE MEMORANDUM\nTO: FTB Audit Division\nRE: Worker Classification Defense under Cal. Labor Code § 2776 (B2B Exemption)\n\nTaxpayer Vance Tech Holdings operates as an independent business entity providing specialized systems architecture. All services are governed by written contracts meeting each requirement of California Labor Code Section 2776.'
     }
   ];
 
   const currentMatter = matters.find(m => m.id === selectedMatterId) || matters[0];
+  const isMatterSealed = !!sealedMatters[currentMatter.id];
+  const currentAssessment = assessments[currentMatter.id] || currentMatter.defaultAssessment;
+
+  const handleDownloadMemo = () => {
+    const blob = new Blob([currentMatter.memoDraft], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${currentMatter.caseRef}_Legal_Defense_Memo.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleSealMemo = () => {
+    setSealedMatters(prev => ({ ...prev, [currentMatter.id]: true }));
+  };
 
   return (
     <div className="space-y-6">
@@ -115,7 +147,7 @@ export function TaxAttorneyView() {
         <div className="flex items-center gap-3 text-xs">
           <div className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-center">
             <span className="text-slate-400 block text-[10px] uppercase">Active Matters</span>
-            <span className="font-bold text-purple-300 font-mono">2 Matters</span>
+            <span className="font-bold text-purple-300 font-mono">{matters.length} Matters</span>
           </div>
           <div className="px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-center">
             <span className="text-rose-400 block text-[10px] uppercase">Controversy Exposure</span>
@@ -160,7 +192,13 @@ export function TaxAttorneyView() {
                       </span>
                     ))}
                   </div>
-                  <span className="text-purple-400 font-medium">Review Legal Brief</span>
+                  {sealedMatters[m.id] ? (
+                    <span className="text-emerald-400 font-semibold flex items-center gap-1 text-[10px]">
+                      <Award className="w-3 h-3" /> Sealed
+                    </span>
+                  ) : (
+                    <span className="text-purple-400 font-medium">Review Legal Brief</span>
+                  )}
                 </div>
               </div>
             ))}
@@ -195,7 +233,7 @@ export function TaxAttorneyView() {
                     activeTab === 'WORKPAPERS' ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
-                  Privileged Notes
+                  Privileged Notes ({currentMatter.workpapers.length})
                 </button>
                 <button
                   onClick={() => setActiveTab('MEMO')}
@@ -243,12 +281,13 @@ export function TaxAttorneyView() {
                 </div>
 
                 <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-                  <div className="text-xs font-semibold text-slate-300">
-                    Attorney Legal Assessment & Strategy
+                  <div className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+                    <span>Attorney Legal Assessment & Strategy</span>
+                    <span className="text-[10px] text-purple-400 font-mono">Privileged Work Product</span>
                   </div>
                   <textarea
-                    value={attorneyAssessment}
-                    onChange={(e) => setAttorneyAssessment(e.target.value)}
+                    value={currentAssessment}
+                    onChange={(e) => setAssessments(prev => ({ ...prev, [currentMatter.id]: e.target.value }))}
                     rows={4}
                     className="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 leading-relaxed focus:outline-none focus:border-purple-500 font-sans"
                   />
@@ -265,10 +304,10 @@ export function TaxAttorneyView() {
                 <p className="text-xs text-slate-400 leading-relaxed">
                   These records are protected under Federal Rule of Evidence 502 and state professional conduct rules. They are excluded from standard preparer exports and IRS e-file staging schemas.
                 </p>
-                <div className="p-3 bg-slate-900 rounded-lg border border-slate-800 font-mono text-xs text-slate-300 space-y-1">
-                  <div>[2026-10-02 14:15] Initial interview conducted regarding telecommuter employer domicile.</div>
-                  <div>[2026-10-03 09:30] Client confirmed employer does not maintain a registered office in NJ.</div>
-                  <div>[2026-10-04 11:00] Recommended attaching Form 8275 to Form IT-203 with full disclosure statement.</div>
+                <div className="p-3 bg-slate-900 rounded-lg border border-slate-800 font-mono text-xs text-slate-300 space-y-1.5">
+                  {currentMatter.workpapers.map((wp, idx) => (
+                    <div key={idx}>{wp}</div>
+                  ))}
                 </div>
               </div>
             )}
@@ -277,17 +316,16 @@ export function TaxAttorneyView() {
               <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-200">Form 8275 / State Protest Defense Memo</span>
-                  <button className="flex items-center gap-1 text-xs text-purple-400 hover:underline">
-                    <Download className="w-3.5 h-3.5" /> Download PDF Packet
+                  <button 
+                    onClick={handleDownloadMemo}
+                    className="flex items-center gap-1.5 text-xs text-purple-400 hover:text-purple-300 hover:underline px-2.5 py-1 rounded bg-slate-900 border border-slate-800 transition"
+                  >
+                    <Download className="w-3.5 h-3.5" /> 
+                    <span>Download Formal Memo (.txt)</span>
                   </button>
                 </div>
-                <div className="p-4 bg-slate-900 rounded-lg border border-slate-800 font-serif text-xs text-slate-300 leading-relaxed space-y-2">
-                  <p className="font-bold font-sans">MEMORANDUM OF SUBSTANTIAL AUTHORITY & TAX POSITION DISCLOSURE</p>
-                  <p>TO: Case File {currentMatter.caseRef}</p>
-                  <p>RE: Position under 20 NYCRR § 131.18 and IRC § 6662 Penalty Defense</p>
-                  <p className="pt-2">
-                    Taxpayer takes the position that wage compensation earned while physically situated outside New York State is properly apportioned based on working days outside the state in accordance with the Due Process and Dormant Commerce Clauses of the United States Constitution.
-                  </p>
+                <div className="p-4 bg-slate-900 rounded-lg border border-slate-800 font-mono text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">
+                  {currentMatter.memoDraft}
                 </div>
               </div>
             )}
@@ -301,16 +339,16 @@ export function TaxAttorneyView() {
 
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setMemoApproved(true)}
-                  disabled={memoApproved}
+                  onClick={handleSealMemo}
+                  disabled={isMatterSealed}
                   className={`px-4 py-2 rounded-xl font-bold transition flex items-center gap-1.5 ${
-                    memoApproved
-                      ? 'bg-emerald-600 text-white cursor-default'
+                    isMatterSealed
+                      ? 'bg-emerald-600 text-white cursor-default shadow-md shadow-emerald-500/20'
                       : 'bg-purple-600 hover:bg-purple-500 text-white'
                   }`}
                 >
                   <Check className="w-4 h-4" />
-                  <span>{memoApproved ? 'Legal Position Approved & Sealed' : 'Approve Legal Position & Seal Memo'}</span>
+                  <span>{isMatterSealed ? 'Legal Position Sealed (Bar #CA-294812)' : 'Approve Legal Position & Seal Memo'}</span>
                 </button>
               </div>
             </div>

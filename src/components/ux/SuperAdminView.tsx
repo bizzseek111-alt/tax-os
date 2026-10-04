@@ -9,10 +9,12 @@ import {
   CheckCircle2, 
   AlertOctagon, 
   Lock, 
-  Activity,
-  Layers,
-  Terminal,
-  Database
+  Activity, 
+  Layers, 
+  Terminal, 
+  Database,
+  ExternalLink,
+  BookOpen
 } from 'lucide-react';
 
 interface KillSwitchItem {
@@ -21,6 +23,15 @@ interface KillSwitchItem {
   description: string;
   active: boolean;
   severity: 'CRITICAL' | 'HIGH' | 'MEDIUM';
+}
+
+interface RuleRelease {
+  jurisdiction: string;
+  version: string;
+  status: string;
+  hash: string;
+  statutes: string[];
+  effectiveDate: string;
 }
 
 export function SuperAdminView() {
@@ -48,17 +59,77 @@ export function SuperAdminView() {
     }
   ]);
 
-  const [activeRuleReleases] = useState([
-    { jurisdiction: 'US-FED', version: 'v2026.1.4', status: 'ACTIVE', hash: 'sha256:fed1040...' },
-    { jurisdiction: 'US-CA', version: 'v2026.0.8', status: 'ACTIVE', hash: 'sha256:ca540...' },
-    { jurisdiction: 'US-NY', version: 'v2026.2.0', status: 'ACTIVE', hash: 'sha256:nyit201...' },
-    { jurisdiction: 'US-NJ', version: 'v2026.1.1', status: 'ACTIVE', hash: 'sha256:nj1040...' },
-    { jurisdiction: 'US-IL', version: 'v2026.0.4', status: 'ACTIVE', hash: 'sha256:il1040...' },
-    { jurisdiction: 'US-MA', version: 'v2026.1.0', status: 'ACTIVE', hash: 'sha256:maform1...' }
+  const [activeRuleReleases] = useState<RuleRelease[]>([
+    { 
+      jurisdiction: 'US-FED', 
+      version: 'v2026.1.4', 
+      status: 'ACTIVE', 
+      hash: 'sha256:fed1040a1b2c3d4e5f6',
+      statutes: ['26 U.S.C. § 162(a)', '26 U.S.C. § 199A', '26 U.S.C. § 274(n)', '26 U.S.C. § 280A'],
+      effectiveDate: '2026-01-01'
+    },
+    { 
+      jurisdiction: 'US-CA', 
+      version: 'v2026.0.8', 
+      status: 'ACTIVE', 
+      hash: 'sha256:ca540f6e5d4c3b2a109',
+      statutes: ['Cal. RTC § 17215.4 (HSA Addition)', 'Cal. RTC § 17255 (Sec 179 $25k Cap)'],
+      effectiveDate: '2026-01-01'
+    },
+    { 
+      jurisdiction: 'US-NY', 
+      version: 'v2026.2.0', 
+      status: 'ACTIVE', 
+      hash: 'sha256:nyit2017a8b9c0d1e2f',
+      statutes: ['20 NYCRR § 131.18 (Convenience Rule)', 'NY Tax Law § 605(b)(1)(B) (183-Day Rule)'],
+      effectiveDate: '2026-01-01'
+    },
+    { 
+      jurisdiction: 'US-NJ', 
+      version: 'v2026.1.1', 
+      status: 'ACTIVE', 
+      hash: 'sha256:nj10403f2e1d0c9b8a7',
+      statutes: ['N.J.S.A. § 54A:5-2 (No Netting Ban)', 'N.J.S.A. § 54A:4-1 (Convenience Credit)'],
+      effectiveDate: '2026-01-01'
+    },
+    { 
+      jurisdiction: 'US-IL', 
+      version: 'v2026.0.4', 
+      status: 'ACTIVE', 
+      hash: 'sha256:il10409a8b7c6d5e4f3',
+      statutes: ['35 ILCS 5/203(a)(2)(F) (100% Pension Subtraction)'],
+      effectiveDate: '2026-01-01'
+    },
+    { 
+      jurisdiction: 'US-MA', 
+      version: 'v2026.1.0', 
+      status: 'ACTIVE', 
+      hash: 'sha256:maform14b5c6d7e8f9a',
+      statutes: ['Mass. Gen. Laws ch. 62, § 4(d) (4% Fair Share Surtax >$1,053,750)'],
+      effectiveDate: '2026-01-01'
+    }
+  ]);
+
+  const [selectedRule, setSelectedRule] = useState<RuleRelease | null>(null);
+  const [auditLogs, setAuditLogs] = useState<Array<{ timestamp: string; event: string; user: string }>>([
+    { timestamp: '14:20:12', event: 'Rule Set US-FED-2026.1.4 verified by Regression Engine (100% pass)', user: 'sys_release_bot' },
+    { timestamp: '14:15:00', event: 'ModelRouter budget audit: avg case cost $1.84 (under $4.50 cap)', user: 'sys_telemetry' }
   ]);
 
   const toggleKillSwitch = (id: string) => {
-    setKillSwitches(prev => prev.map(ks => ks.id === id ? { ...ks, active: !ks.active } : ks));
+    setKillSwitches(prev => prev.map(ks => {
+      if (ks.id === id) {
+        const nextState = !ks.active;
+        const newLog = {
+          timestamp: new Date().toLocaleTimeString(),
+          event: `KILL SWITCH [${ks.name}] ${nextState ? 'ENGAGED (ACTIVE)' : 'DISENGAGED (NORMAL)'}`,
+          user: 'super_admin_fido2'
+        };
+        setAuditLogs(logs => [newLog, ...logs]);
+        return { ...ks, active: nextState };
+      }
+      return ks;
+    }));
   };
 
   return (
@@ -198,6 +269,26 @@ export function SuperAdminView() {
               </div>
             ))}
           </div>
+
+          {/* Real-time Audit Stream */}
+          <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Terminal className="w-3.5 h-3.5 text-blue-400" />
+                <span>Security Audit Event Log</span>
+              </span>
+              <span className="text-[10px] text-emerald-400 font-mono">Immutable Stream</span>
+            </div>
+            <div className="space-y-1.5 font-mono text-[11px] max-h-32 overflow-y-auto">
+              {auditLogs.map((log, i) => (
+                <div key={i} className="text-slate-400 flex items-start gap-2 bg-slate-950 p-1.5 rounded">
+                  <span className="text-slate-500 shrink-0">[{log.timestamp}]</span>
+                  <span className="text-slate-300 flex-1">{log.event}</span>
+                  <span className="text-blue-400 text-[10px] shrink-0">@{log.user}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Right Column: Sovereign Five-State Rule Releases */}
@@ -205,7 +296,7 @@ export function SuperAdminView() {
           <div className="flex items-center justify-between px-1">
             <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
               <Database className="w-4 h-4 text-purple-400" />
-              <span>Sovereign Five-State Rule Engine Releases</span>
+              <span>Sovereign Five-State Rule Releases</span>
             </div>
             <span className="text-[11px] text-emerald-400 font-mono">100% In Effect</span>
           </div>
@@ -217,25 +308,63 @@ export function SuperAdminView() {
                   <th className="py-2.5 px-4 font-semibold">Jurisdiction</th>
                   <th className="py-2.5 px-4 font-semibold">Rule Version</th>
                   <th className="py-2.5 px-4 font-semibold">Digest Fingerprint</th>
-                  <th className="py-2.5 px-4 font-semibold text-right">Status</th>
+                  <th className="py-2.5 px-4 font-semibold text-right">Details</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/80 font-mono">
                 {activeRuleReleases.map((rule) => (
-                  <tr key={rule.jurisdiction} className="hover:bg-slate-950/40 transition">
-                    <td className="py-2.5 px-4 text-slate-200 font-sans font-bold">{rule.jurisdiction}</td>
-                    <td className="py-2.5 px-4 text-purple-400">{rule.version}</td>
-                    <td className="py-2.5 px-4 text-slate-500">{rule.hash}</td>
-                    <td className="py-2.5 px-4 text-right">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-sans font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <tr 
+                    key={rule.jurisdiction} 
+                    onClick={() => setSelectedRule(rule)}
+                    className="hover:bg-slate-950/60 transition cursor-pointer"
+                  >
+                    <td className="py-2.5 px-4 text-slate-200 font-sans font-bold flex items-center gap-2">
+                      <span>{rule.jurisdiction}</span>
+                      <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                         {rule.status}
                       </span>
+                    </td>
+                    <td className="py-2.5 px-4 text-purple-400">{rule.version}</td>
+                    <td className="py-2.5 px-4 text-slate-500">{rule.hash}</td>
+                    <td className="py-2.5 px-4 text-right text-blue-400 font-sans">
+                      Inspect 🔍
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+
+          {/* Selected Rule Inspection Card */}
+          {selectedRule && (
+            <div className="p-4 rounded-xl bg-slate-900 border border-purple-500/40 space-y-3 shadow-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-purple-400" />
+                  <h4 className="text-xs font-bold text-slate-100">
+                    Rule Package Details: {selectedRule.jurisdiction} ({selectedRule.version})
+                  </h4>
+                </div>
+                <span className="text-[10px] font-mono text-slate-400">Effective: {selectedRule.effectiveDate}</span>
+              </div>
+
+              <div className="space-y-1 text-xs">
+                <span className="text-slate-400 block text-[11px]">Primary Statutory Authorities Grounded:</span>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {selectedRule.statutes.map((st, i) => (
+                    <span key={i} className="px-2 py-0.5 rounded text-[11px] font-mono bg-slate-950 text-slate-200 border border-slate-800">
+                      {st}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="text-[11px] font-mono text-slate-400 pt-2 border-t border-slate-800 flex items-center justify-between">
+                <span>Release Digest: {selectedRule.hash}</span>
+                <span className="text-emerald-400">100% Deterministic Lineage</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
