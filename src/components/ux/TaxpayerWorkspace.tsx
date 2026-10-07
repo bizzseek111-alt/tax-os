@@ -183,6 +183,7 @@ export function TaxpayerWorkspace({ onNavigate }: { onNavigate?: (path: string) 
   const [eFileSubmitted, setEFileSubmitted] = useState(false);
   const [eFileAgreed, setEFileAgreed] = useState(false);
   const [taxpayerSignature, setTaxpayerSignature] = useState('');
+  const [reviewMode, setReviewMode] = useState<'AI_AUTOPILOT' | 'HUMAN_VERIFIED' | 'FULL_SERVICE'>('HUMAN_VERIFIED');
 
   // AI Assistant State
   const [showAiModal, setShowAiModal] = useState(false);
@@ -1207,6 +1208,75 @@ export function TaxpayerWorkspace({ onNavigate }: { onNavigate?: (path: string) 
                   <span className="text-[11px] text-rose-700">Due April 15, 2027 to Franchise Tax Board</span>
                 </div>
                 <span className="font-mono font-extrabold text-rose-700 text-lg tabular-nums">-${stateDue.toLocaleString('en-US')}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* PART 13: HOW WOULD YOU LIKE TO COMPLETE YOUR RETURN? */}
+          <div className="bg-white border border-sage-300 rounded-3xl p-6 sm:p-8 shadow-xs space-y-5">
+            <div>
+              <span className="text-xs font-bold text-forest-700 uppercase tracking-wider">Review Mode Selection</span>
+              <h3 className="text-base font-extrabold text-forest-950 mt-1">
+                How would you like to complete your return?
+              </h3>
+              <p className="text-xs text-neutral-600 mt-0.5">
+                Select your preferred review tier before authorizing electronic transmission.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+              {/* Option A: AI Autopilot */}
+              <div 
+                onClick={() => setReviewMode('AI_AUTOPILOT')}
+                className={`p-5 rounded-2xl border-2 cursor-pointer transition space-y-2 ${
+                  reviewMode === 'AI_AUTOPILOT'
+                    ? 'border-forest-900 bg-forest-900/5 shadow-xs'
+                    : 'border-sage-200 hover:border-sage-300 bg-white'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-sm text-forest-950">Option A: AI Autopilot</span>
+                  {reviewMode === 'AI_AUTOPILOT' && <Check className="w-4 h-4 text-forest-900 font-bold" />}
+                </div>
+                <p className="text-neutral-600 text-[11px] leading-relaxed">
+                  TaxOS prepares and verifies your return autonomously. You review the plain-English summary, confirm exceptions, and digitally sign.
+                </p>
+              </div>
+
+              {/* Option B: Human Verified */}
+              <div 
+                onClick={() => setReviewMode('HUMAN_VERIFIED')}
+                className={`p-5 rounded-2xl border-2 cursor-pointer transition space-y-2 ${
+                  reviewMode === 'HUMAN_VERIFIED'
+                    ? 'border-forest-900 bg-forest-900/5 shadow-xs'
+                    : 'border-sage-200 hover:border-sage-300 bg-white'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-sm text-forest-950">Option B: Human Verified</span>
+                  {reviewMode === 'HUMAN_VERIFIED' && <Check className="w-4 h-4 text-forest-900 font-bold" />}
+                </div>
+                <p className="text-neutral-600 text-[11px] leading-relaxed">
+                  A licensed CPA or Enrolled Agent reviews all tax positions, inspects flagged exceptions, and conducts final sign-off before filing.
+                </p>
+              </div>
+
+              {/* Option C: Full Service */}
+              <div 
+                onClick={() => setReviewMode('FULL_SERVICE')}
+                className={`p-5 rounded-2xl border-2 cursor-pointer transition space-y-2 ${
+                  reviewMode === 'FULL_SERVICE'
+                    ? 'border-forest-900 bg-forest-900/5 shadow-xs'
+                    : 'border-sage-200 hover:border-sage-300 bg-white'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-sm text-forest-950">Option C: Full Professional Service</span>
+                  {reviewMode === 'FULL_SERVICE' && <Check className="w-4 h-4 text-forest-900 font-bold" />}
+                </div>
+                <p className="text-neutral-600 text-[11px] leading-relaxed">
+                  A dedicated human CPA leads your entire preparation and advisory workflow with TaxOS AI assistance for complex business matters.
+                </p>
               </div>
             </div>
           </div>

@@ -197,12 +197,11 @@ export function SmartStartIntake({ onComplete, onCancel }: SmartStartIntakeProps
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
               {[
-                { id: 'PERSONAL', title: 'Personal Return', sub: 'Individual, married, or family with W-2 wages and investments', icon: User },
-                { id: 'SELF_EMPLOYED', title: 'Self-Employed / 1099', sub: 'Freelancer, consultant, creator, solo LLC with Schedule C', icon: Briefcase },
-                { id: 'BUSINESS', title: 'Small Business Entity', sub: 'S-Corporation (1120-S), Partnership (1065), or multi-member LLC', icon: Building2 },
-                { id: 'PRO', title: 'Tax Professional', sub: 'CPA or Enrolled Agent preparing returns for private clients', icon: Scale }
+                { id: 'PERSONAL', title: 'Personal Taxes', sub: 'Individual, married, or family with W-2 wages and investments', icon: User },
+                { id: 'SELF_EMPLOYED', title: 'Self-Employed Taxes', sub: 'Freelancer, consultant, creator, solo LLC with Schedule C', icon: Briefcase },
+                { id: 'BUSINESS', title: 'Business Taxes', sub: 'S-Corporation (1120-S), Partnership (1065), or multi-member LLC', icon: Building2 }
               ].map((card) => {
                 const isSelected = filerType === card.id;
                 const Icon = card.icon;
@@ -212,18 +211,18 @@ export function SmartStartIntake({ onComplete, onCancel }: SmartStartIntakeProps
                     onClick={() => setFilerType(card.id as any)}
                     className={`p-5 rounded-3xl border-2 transition cursor-pointer space-y-2 ${
                       isSelected 
-                        ? 'border-pine-700 bg-pine-50/50 shadow-xs' 
+                        ? 'border-forest-900 bg-forest-900/5 shadow-xs' 
                         : 'border-sage-200 hover:border-sage-300 bg-white'
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <div className={`p-2.5 rounded-2xl ${isSelected ? 'bg-pine-700 text-white' : 'bg-sage-100 text-sage-700'}`}>
+                      <div className={`p-2.5 rounded-2xl ${isSelected ? 'bg-forest-900 text-lime-400' : 'bg-sage-100 text-sage-700'}`}>
                         <Icon className="w-5 h-5" />
                       </div>
-                      {isSelected && <Check className="w-5 h-5 text-pine-700" />}
+                      {isSelected && <Check className="w-5 h-5 text-forest-900 font-bold" />}
                     </div>
-                    <div className="font-bold text-base text-sage-950">{card.title}</div>
-                    <div className="text-xs text-sage-600 leading-relaxed">{card.sub}</div>
+                    <div className="font-bold text-base text-forest-950">{card.title}</div>
+                    <div className="text-xs text-neutral-600 leading-relaxed">{card.sub}</div>
                   </div>
                 );
               })}

@@ -118,12 +118,15 @@ export function App() {
     currentPath === '/individuals' ||
     currentPath === '/self-employed' ||
     currentPath === '/business' ||
+    currentPath === '/business/income-tax' ||
+    currentPath === '/sales-tax' ||
+    currentPath === '/payroll-tax' ||
     currentPath === '/tax-professionals' ||
+    currentPath === '/expert-review' ||
+    currentPath === '/tax-twin' ||
     currentPath === '/pricing' ||
     currentPath === '/security' ||
     currentPath.startsWith('/states') ||
-    currentPath === '/sales-tax' ||
-    currentPath === '/payroll-tax' ||
     currentPath === '/resources' ||
     currentPath === '/about' ||
     currentPath === '/contact' ||

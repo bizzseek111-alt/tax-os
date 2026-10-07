@@ -7,6 +7,12 @@ export default {
   theme: {
     extend: {
       colors: {
+        forest: {
+          950: '#08211C',
+          900: '#123B33',
+          700: '#165A4A',
+          500: '#1E826C',
+        },
         pine: {
           50: '#e8f3f1',
           100: '#c5e2dd',
@@ -25,7 +31,7 @@ export default {
           600: '#8ec464',
         },
         sage: {
-          50: '#F6FAF8',
+          50: '#F8FAF9',
           100: '#EDF4F1',
           200: '#E1EAE7',
           300: '#D1DFDC',
@@ -35,6 +41,13 @@ export default {
           700: '#3E5450',
           800: '#263B37',
           900: '#122A26',
+        },
+        semantic: {
+          warning: '#DC8B17',
+          critical: '#D92D20',
+          success: '#16845B',
+          legal: '#6B21A8',
+          info: '#2563EB',
         }
       },
       borderRadius: {

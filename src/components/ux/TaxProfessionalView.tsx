@@ -14,485 +14,573 @@ import {
   HelpCircle,
   ExternalLink,
   ChevronDown,
-  ChevronUp,
+  ChevronRight,
   Check,
   Building,
   Save,
-  RotateCcw
+  RotateCcw,
+  Sparkles,
+  Eye,
+  Send,
+  MessageSquare,
+  Search,
+  Filter,
+  DollarSign,
+  Layers,
+  Receipt,
+  UserCheck
 } from 'lucide-react';
 
-interface CaseTriageItem {
+export type ReviewDomain = 'INCOME_TAX' | 'STATE_TAX' | 'SALES_TAX' | 'PAYROLL_TAX';
+export type CaseStatus = 
+  | 'ASSIGNED' 
+  | 'READY_FOR_REVIEW' 
+  | 'IN_REVIEW' 
+  | 'WAITING_FOR_CUSTOMER' 
+  | 'WAITING_FOR_AI' 
+  | 'NEEDS_SENIOR_REVIEW' 
+  | 'NEEDS_ATTORNEY' 
+  | 'APPROVED' 
+  | 'FILED' 
+  | 'REJECTED' 
+  | 'DUE_SOON';
+
+interface ReviewCase {
   id: string;
-  clientName: string;
-  states: string[];
-  completeness: number;
-  aiConfidence: number;
-  openExceptions: number;
+  customerName: string;
+  taxYear: number;
+  jurisdictions: string[];
+  taxDomain: ReviewDomain;
+  status: CaseStatus;
+  readinessPercent: number;
+  materialityCents: number;
+  aiConfidencePercent: number;
+  evidenceCompletenessPercent: number;
   riskRating: 'LOW' | 'MEDIUM' | 'HIGH';
   deadline: string;
-  status: 'READY_FOR_REVIEW' | 'BLOCKED' | 'HIGH_RISK' | 'FILED';
-  incomeSummary: string;
-  evidenceSummary: string;
-  federalDetails: {
-    title: string;
-    description: string;
-    citation: string;
-    defaultDeductible: number;
-    defaultDisallowed: number;
+  
+  // AI Review Brief
+  aiBrief: {
+    taxBaseSummary: string;
+    priorYearVariance: string;
+    keyPositions: string[];
+    statutoryCitations: string[];
+    contradictionsFound: string;
+    outstandingQuestions: string[];
+    aiRecommendation: string;
   };
-  stateDetails: {
-    title: string;
-    description: string;
-    citation: string;
+
+  // Specific Domain Details
+  domainDetails?: {
+    salesTax?: {
+      nexusStatus: string;
+      taxableSales: string;
+      exemptSales: string;
+      collectedTax: string;
+    };
+    payroll?: {
+      grossWages: string;
+      form941Reconciled: boolean;
+      suiState: string;
+      workerClassStatus: string;
+    };
   };
 }
 
 export function TaxProfessionalView() {
-  const [selectedCaseId, setSelectedCaseId] = useState<string>('case-101');
-  const [cpaNotes, setCpaNotes] = useState('');
-  const [overrideActive, setOverrideActive] = useState(false);
-  const [overrideAmount, setOverrideAmount] = useState('710.00');
-  const [savedOverrides, setSavedOverrides] = useState<Record<string, { amount: string; note: string }>>({});
-  const [signedCases, setSignedCases] = useState<Record<string, boolean>>({});
-  const [escalatedCases, setEscalatedCases] = useState<Record<string, boolean>>({});
+  const [activeDomain, setActiveDomain] = useState<ReviewDomain>('INCOME_TAX');
+  const [activeStatusFilter, setActiveStatusFilter] = useState<CaseStatus>('READY_FOR_REVIEW');
+  const [selectedCaseId, setSelectedCaseId] = useState<string>('case-fed-01');
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Action state
+  const [isModifying, setIsModifying] = useState(false);
+  const [overrideValue, setOverrideValue] = useState('710.00');
+  const [overrideNote, setOverrideNote] = useState('');
+  const [actionNotice, setActionNotice] = useState<string | null>(null);
 
-  const cases: CaseTriageItem[] = [
+  // Authorized jurisdictions for current logged-in CPA/EA
+  const authorizedStates = ['US-FED', 'US-CA', 'US-NY'];
+
+  // Master Cases Repository
+  const [cases, setCases] = useState<ReviewCase[]>([
     {
-      id: 'case-101',
-      clientName: 'Alex Rivera (Sole Prop & W-2)',
-      states: ['US-FED', 'US-CA'],
-      completeness: 92,
-      aiConfidence: 98,
-      openExceptions: 1,
+      id: 'case-fed-01',
+      customerName: 'Alex Rivera (Sole Prop & W-2)',
+      taxYear: 2026,
+      jurisdictions: ['US-FED', 'US-CA'],
+      taxDomain: 'INCOME_TAX',
+      status: 'READY_FOR_REVIEW',
+      readinessPercent: 94,
+      materialityCents: 14820000,
+      aiConfidencePercent: 98,
+      evidenceCompletenessPercent: 98.4,
       riskRating: 'LOW',
       deadline: 'April 15, 2027',
-      status: 'READY_FOR_REVIEW',
-      incomeSummary: 'Reconciled $92,000 consulting 1099-NEC + $56,200 W-2. Zero duplicate deposits detected.',
-      evidenceSummary: '142 of 144 Schedule C expenses matched to verified receipts (98.4% documentary health).',
-      federalDetails: {
-        title: 'Client Meals vs Travel Expense ($1,420.00 Total)',
-        description: 'AI identified $1,420 in restaurant charges during client trip to Chicago. Under IRC § 274(n), business meals are subject to 50% statutory disallowance. Deterministic engine allocated $710.00 deductible and $710.00 non-deductible.',
-        citation: '26 U.S.C. § 274(n)',
-        defaultDeductible: 710,
-        defaultDisallowed: 710
-      },
-      stateDetails: {
-        title: 'California Schedule CA HSA Addition & Sec 179 Cap',
-        description: 'Federal HSA deduction of $4,150 added back to California taxable income under Cal. RTC § 17215.4. Section 179 depreciation capped at $25,000 state limit under Cal. RTC § 17255.',
-        citation: 'Cal. RTC § 17215.4 & § 17255'
+      aiBrief: {
+        taxBaseSummary: 'Reconciled $92,000 Schedule C consulting 1099-NEC revenue + $56,200 W-2 compensation. Zero duplicate deposits detected.',
+        priorYearVariance: '+18.4% gross revenue increase over 2025; deduction profile remains consistent.',
+        keyPositions: [
+          '26 U.S.C. § 162: $18,490 Schedule C software, cloud hosting & ordinary trade expenses.',
+          '26 U.S.C. § 199A: $11,950 20% Qualified Business Income deduction claimed for sole proprietorship.',
+          '26 U.S.C. § 274(n): $1,420 Chicago trip restaurant expenses split 50% ($710 deductible / $710 disallowed).'
+        ],
+        statutoryCitations: ['26 U.S.C. § 61', '26 U.S.C. § 162(a)', '26 U.S.C. § 199A', '26 U.S.C. § 274(n)'],
+        contradictionsFound: 'None. All 142 card expenses match uploaded receipt PDFs with unique SHA-256 hashes.',
+        outstandingQuestions: ['1 taxpayer inquiry waiting in "Needs You": Travel purpose confirmation for Sept 14 flight.'],
+        aiRecommendation: 'Approve positions. Schedule C deduction evidence meets strict Treasury Regulation § 1.162-1 criteria.'
       }
     },
     {
-      id: 'case-102',
-      clientName: 'Elena Rostova (Remote Tech Consultant)',
-      states: ['US-FED', 'US-NY', 'US-NJ'],
-      completeness: 88,
-      aiConfidence: 89,
-      openExceptions: 2,
+      id: 'case-state-ny-02',
+      customerName: 'Elena Rostova (Remote Consultant)',
+      taxYear: 2026,
+      jurisdictions: ['US-FED', 'US-NY', 'US-NJ'],
+      taxDomain: 'STATE_TAX',
+      status: 'READY_FOR_REVIEW',
+      readinessPercent: 88,
+      materialityCents: 16500000,
+      aiConfidencePercent: 89,
+      evidenceCompletenessPercent: 96.2,
       riskRating: 'HIGH',
       deadline: 'April 15, 2027',
-      status: 'HIGH_RISK',
-      incomeSummary: 'Reconciled $165,000 W-2 wages from Manhattan employer. 42 telecommuting days identified.',
-      evidenceSummary: '96.2% documentary substantiation. Telecommuting work logs verified.',
-      federalDetails: {
-        title: 'Multi-State Telecommuting Wage Sourcing Allocation',
-        description: 'Client performed remote engineering services from Jersey City apartment for NYC employer. Requires statutory sourcing analysis.',
-        citation: '26 U.S.C. § 61',
-        defaultDeductible: 165000,
-        defaultDisallowed: 0
-      },
-      stateDetails: {
-        title: 'New York Convenience of Employer vs NJ Resident Credit',
-        description: 'New York asserts full sovereign taxing jurisdiction under 20 NYCRR § 131.18 convenience of the employer rule. Clashes with New Jersey credit under N.J.S.A. § 54A:4-1. Potential $3,450 double taxation exposure without disclosure statement.',
-        citation: '20 NYCRR § 131.18 vs N.J.S.A. § 54A:4-1'
+      aiBrief: {
+        taxBaseSummary: '$165,000 W-2 wages from Manhattan employer. 42 telecommuting days worked from Jersey City residence.',
+        priorYearVariance: 'First year telecommuting out of state; significant New York IT-203 allocation change.',
+        keyPositions: [
+          '20 NYCRR § 131.18: Convenience of the employer rule allocation. Days worked from NJ require bona fide home office defense.',
+          'N.J.S.A. § 54A:4-1: Schedule NJ-COJ credit for income taxes paid to New York State.'
+        ],
+        statutoryCitations: ['20 NYCRR § 131.18', 'NY Tax Law § 605(b)', 'N.J.S.A. § 54A:4-1'],
+        contradictionsFound: 'Telecommuting log indicates work performed in NJ, while Box 16 W-2 shows 100% NY withholding.',
+        outstandingQuestions: ['Employer letter requested verifying remote work necessity.'],
+        aiRecommendation: 'Senior review recommended to determine if bona fide employer office exception applies.'
       }
     },
     {
-      id: 'case-103',
-      clientName: 'Marcus Vance (Single-Member LLC)',
-      states: ['US-FED', 'US-MA'],
-      completeness: 98,
-      aiConfidence: 99,
-      openExceptions: 0,
-      riskRating: 'LOW',
-      deadline: 'April 15, 2027',
+      id: 'case-sales-03',
+      customerName: 'AeroGear E-Commerce LLC',
+      taxYear: 2026,
+      jurisdictions: ['US-FED', 'US-CA', 'US-TX', 'US-NY'],
+      taxDomain: 'SALES_TAX',
       status: 'READY_FOR_REVIEW',
-      incomeSummary: 'Reconciled $1,250,000 gross revenues. Deduplicated merchant payment settlement accounts.',
-      evidenceSummary: '99.5% receipt substantiation. Verified cloud infrastructure and equipment invoices.',
-      federalDetails: {
-        title: 'Qualified Business Income (QBI) High-Earner Phase-out',
-        description: 'Taxable income exceeds threshold ($197,200). Deterministic engine verified W-2 wage / UBIA limitation under IRC § 199A(b)(2).',
-        citation: '26 U.S.C. § 199A',
-        defaultDeductible: 0,
-        defaultDisallowed: 0
+      readinessPercent: 96,
+      materialityCents: 84000000,
+      aiConfidencePercent: 99,
+      evidenceCompletenessPercent: 99.1,
+      riskRating: 'MEDIUM',
+      deadline: 'January 20, 2027',
+      aiBrief: {
+        taxBaseSummary: '$840,000 total digital and physical retail sales across 14 states.',
+        priorYearVariance: 'Crossed $500,000 California threshold and $100,000 Texas economic nexus threshold in Q3 2026.',
+        keyPositions: [
+          'South Dakota v. Wayfair: Economic nexus established in CA (CDTFA-401) and TX (01-114).',
+          'Marketplace Facilitator: $320,000 in Amazon sales excluded from direct merchant tax collection.'
+        ],
+        statutoryCitations: ['Cal. RTC § 6203', 'Tex. Tax Code § 151.051', 'NY Tax Law § 1101(b)'],
+        contradictionsFound: 'None. Marketplace facilitator certificates on file.',
+        outstandingQuestions: ['None. Return draft balances within $0.02 of General Ledger.'],
+        aiRecommendation: 'Approve and queue electronic return transmission to CDTFA and Texas Comptroller.'
       },
-      stateDetails: {
-        title: 'Massachusetts 4% Fair Share Surtax Calculation',
-        description: 'Taxable income exceeds the statutory threshold of $1,053,750 (2026 inflation indexed). Deterministic engine applied the constitutional 4% surtax on $196,250 excess income ($7,850 surtax).',
-        citation: 'Mass. Gen. Laws ch. 62, § 4(d)'
+      domainDetails: {
+        salesTax: {
+          nexusStatus: 'Active in CA, TX, NY',
+          taxableSales: '$520,000.00',
+          exemptSales: '$320,000.00 (Marketplace Facilitated)',
+          collectedTax: '$44,200.00'
+        }
       }
     },
     {
-      id: 'case-104',
-      clientName: 'David K. (Freelance Architect)',
-      states: ['US-FED', 'US-IL'],
-      completeness: 64,
-      aiConfidence: 84,
-      openExceptions: 3,
-      riskRating: 'MEDIUM',
-      deadline: 'April 15, 2027',
-      status: 'BLOCKED',
-      incomeSummary: 'Ingested $50,000 Schedule C consulting and $80,000 pension 1099-R. Awaiting client confirmation of business mileage log.',
-      evidenceSummary: '82.1% receipts verified. 3 expenses pending client response in Tax Inbox.',
-      federalDetails: {
-        title: 'Pending Mileage Log Substantiation',
-        description: '8,400 business miles claimed without contemporaneous mileage log. Flagged for preparer substantiation hold.',
-        citation: '26 U.S.C. § 274(d)',
-        defaultDeductible: 5628,
-        defaultDisallowed: 0
+      id: 'case-payroll-04',
+      customerName: 'Apex Cloud Solutions Inc',
+      taxYear: 2026,
+      jurisdictions: ['US-FED', 'US-CA'],
+      taxDomain: 'PAYROLL_TAX',
+      status: 'READY_FOR_REVIEW',
+      readinessPercent: 95,
+      materialityCents: 45000000,
+      aiConfidencePercent: 98,
+      evidenceCompletenessPercent: 99.5,
+      riskRating: 'LOW',
+      deadline: 'January 31, 2027',
+      aiBrief: {
+        taxBaseSummary: 'Quarterly Form 941 reconciliation for 12 full-time employees and 4 independent contractors.',
+        priorYearVariance: 'Added 3 new remote employees in Q4.',
+        keyPositions: [
+          'IRC § 3111: FICA & Medicare taxes reconciled against quarterly EFTPS tax deposits.',
+          'California AB 5: Contractor classification review passed for 4 software consultants.'
+        ],
+        statutoryCitations: ['26 U.S.C. § 3102', '26 U.S.C. § 3111', 'Cal. Lab. Code § 2775'],
+        contradictionsFound: 'None. Form 941 Schedule B daily deposit record matches bank EFTPS debits.',
+        outstandingQuestions: ['None. All quarterly W-2 boxes balance.'],
+        aiRecommendation: 'Authorize Form 941 Q4 transmission and release employee W-2 packets.'
       },
-      stateDetails: {
-        title: 'Illinois 100% Pension Subtraction Modification',
-        description: 'Illinois exempts 100% of qualified employee retirement distributions under 35 ILCS 5/203(a)(2)(F). $80,000 subtraction modification verified for Form IL-1040.',
-        citation: '35 ILCS 5/203(a)(2)(F)'
+      domainDetails: {
+        payroll: {
+          grossWages: '$450,000.00',
+          form941Reconciled: true,
+          suiState: 'CA (3.4% Experience Rate)',
+          workerClassStatus: 'All 4 contractors pass AB 5 Part C'
+        }
       }
     }
-  ];
+  ]);
 
-  const currentCase = cases.find(c => c.id === selectedCaseId) || cases[0];
-  const isCaseSigned = !!signedCases[currentCase.id];
-  const isCaseEscalated = !!escalatedCases[currentCase.id];
-  const activeOverride = savedOverrides[currentCase.id];
+  const selectedCase = cases.find(c => c.id === selectedCaseId) || cases[0];
 
-  const handleSaveOverride = () => {
-    if (!cpaNotes.trim()) {
-      alert("Please enter a mandatory CPA override justification note before saving.");
-      return;
-    }
-    setSavedOverrides(prev => ({
-      ...prev,
-      [currentCase.id]: {
-        amount: overrideAmount,
-        note: cpaNotes
-      }
-    }));
-    setOverrideActive(false);
+  const handleAction = (actionType: string) => {
+    setActionNotice(`Action executed: ${actionType} on Case ${selectedCase.id}. Audit event recorded with PTIN.`);
+    setTimeout(() => setActionNotice(null), 4000);
   };
 
-  const handleSignCase = () => {
-    setSignedCases(prev => ({ ...prev, [currentCase.id]: true }));
-  };
-
-  const handleEscalateCase = () => {
-    setEscalatedCases(prev => ({ ...prev, [currentCase.id]: true }));
-    alert(`Case ${currentCase.id} (${currentCase.clientName}) successfully escalated to Tax Controversy Attorney for legal opinion.`);
-  };
+  const filteredCases = cases.filter(c => {
+    const matchesDomain = c.taxDomain === activeDomain;
+    const matchesSearch = c.customerName.toLowerCase().includes(searchQuery.toLowerCase()) || c.id.includes(searchQuery);
+    return matchesDomain && matchesSearch;
+  });
 
   return (
     <div className="space-y-6">
-      {/* Top Header & Triage Statistics */}
-      <div className="p-6 rounded-3xl bg-white border border-sage-300 shadow-sm flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-pine-100 text-pine-800 border border-pine-200">
-            <Users className="w-5 h-5" />
+      
+      {/* 1. Header & Domain Selection Cockpit */}
+      <div className="bg-white border border-sage-300 rounded-3xl p-6 shadow-xs flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-black text-forest-950">Professional Review Cockpit</h1>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-forest-900 text-lime-400">
+              PTIN #P01948291 • Verified Reviewer
+            </span>
           </div>
-          <div>
-            <h2 className="text-base font-bold text-sage-900 flex items-center gap-2">
-              Tax Professional Workspace — CPA & EA Review
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-pine-100 text-pine-800 border border-pine-200">
-                PTIN #P01948291
-              </span>
-            </h2>
-            <p className="text-xs text-sage-600 mt-0.5">
-              Review exceptions first. Deterministic math and citation lineage are pre-verified.
-            </p>
-          </div>
+          <p className="text-xs text-neutral-500 mt-1">
+            Authorized jurisdictions: <strong className="text-forest-900">Federal (US-FED), California (US-CA), New York (US-NY)</strong>
+          </p>
         </div>
 
-        {/* Triage Metrics */}
-        <div className="flex items-center gap-3 text-xs">
-          <div className="px-3.5 py-2 rounded-2xl bg-sage-50 border border-sage-200 text-center">
-            <span className="text-sage-500 block text-[10px] uppercase font-bold">Assigned</span>
-            <span className="font-extrabold text-sage-900 font-mono">{cases.length} Cases</span>
-          </div>
-          <div className="px-3.5 py-2 rounded-2xl bg-lime-100 border border-lime-300 text-center">
-            <span className="text-pine-900 block text-[10px] uppercase font-bold">Ready for Review</span>
-            <span className="font-extrabold text-pine-900 font-mono">2 Cases</span>
-          </div>
-          <div className="px-3.5 py-2 rounded-2xl bg-amber-50 border border-amber-200 text-center">
-            <span className="text-amber-800 block text-[10px] uppercase font-bold">Exceptions</span>
-            <span className="font-extrabold text-amber-900 font-mono">6 Total</span>
-          </div>
+        {/* Domain Tabs */}
+        <div className="flex items-center gap-2 overflow-x-auto">
+          {[
+            { id: 'INCOME_TAX', label: 'Federal Income Tax', icon: FileText },
+            { id: 'STATE_TAX', label: 'State Income Tax', icon: Building },
+            { id: 'SALES_TAX', label: 'Sales & Use Tax', icon: Receipt },
+            { id: 'PAYROLL_TAX', label: 'Payroll & 941', icon: Users }
+          ].map(tab => {
+            const Icon = tab.icon;
+            const isCurrent = activeDomain === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setActiveDomain(tab.id as ReviewDomain);
+                  const firstMatch = cases.find(c => c.taxDomain === tab.id);
+                  if (firstMatch) setSelectedCaseId(firstMatch.id);
+                }}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold transition shrink-0 ${
+                  isCurrent 
+                    ? 'bg-forest-900 text-lime-400 shadow-xs' 
+                    : 'bg-sage-100 hover:bg-sage-200 text-neutral-700'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Assigned Cases Triage Queue */}
-        <div className="lg:col-span-4 space-y-3">
-          <div className="text-xs font-semibold text-sage-600 uppercase tracking-wider flex items-center justify-between px-1">
-            <span>Case Triage Queue</span>
-            <span>Sorted by Risk</span>
+      {/* Action Toast Alert */}
+      {actionNotice && (
+        <div className="p-4 rounded-2xl bg-emerald-100 border border-emerald-300 text-emerald-900 text-xs font-bold flex items-center justify-between animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-700" />
+            <span>{actionNotice}</span>
+          </div>
+          <button onClick={() => setActionNotice(null)} className="text-emerald-800 hover:underline">Dismiss</button>
+        </div>
+      )}
+
+      {/* 2. Dual-Pane Workstation: Queue on Left, Case Brief on Right */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        {/* Left Column: Filterable Case Queue */}
+        <div className="lg:col-span-4 bg-white border border-sage-300 rounded-3xl p-5 shadow-xs space-y-4">
+          
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-forest-950">Queue: {activeDomain.replace('_', ' ')}</h2>
+            <span className="text-xs px-2.5 py-0.5 rounded-full bg-forest-100 text-forest-900 font-bold">
+              {filteredCases.length} Cases
+            </span>
           </div>
 
-          <div className="space-y-2">
-            {cases.map((c) => (
-              <div
-                key={c.id}
-                onClick={() => {
-                  setSelectedCaseId(c.id);
-                  setOverrideActive(false);
-                }}
-                className={`p-4 rounded-2xl border transition cursor-pointer ${
-                  selectedCaseId === c.id
-                    ? 'bg-pine-50 border-pine-600 shadow-xs ring-1 ring-pine-600'
-                    : 'bg-white border-sage-200 hover:border-sage-300 hover:bg-sage-50/50'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-sage-900 truncate">{c.clientName}</span>
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                    c.riskRating === 'HIGH' ? 'bg-rose-100 text-rose-800 border border-rose-200' :
-                    c.riskRating === 'MEDIUM' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
-                    'bg-lime-200 text-pine-900 border border-lime-300'
-                  }`}>
-                    {c.riskRating} RISK
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-1.5 mb-3">
-                  {c.states.map((st) => (
-                    <span key={st} className="px-2 py-0.5 rounded-md text-[10px] font-mono bg-sage-100 text-sage-700 font-semibold">
-                      {st}
-                    </span>
-                  ))}
-                  {signedCases[c.id] && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-lime-200 text-pine-900 border border-lime-400">
-                      SIGNED ✓
-                    </span>
-                  )}
-                  {escalatedCases[c.id] && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-pine-100 text-pine-900 border border-pine-300">
-                      ATTORNEY ⚖
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-between text-xs text-sage-600 pt-2 border-t border-sage-200">
-                  <span>Comp: <strong className="text-sage-900 font-mono">{c.completeness}%</strong></span>
-                  <span>AI Conf: <strong className="text-pine-800 font-mono font-bold">{c.aiConfidence}%</strong></span>
-                  <span className="text-amber-800 font-bold">{c.openExceptions} Exc</span>
-                </div>
-              </div>
-            ))}
+          {/* Search Box */}
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-3" />
+            <input
+              type="text"
+              placeholder="Filter client name or ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-8 pr-3 py-2 bg-sage-50 border border-sage-200 rounded-xl text-xs text-forest-950 focus:outline-forest-700"
+            />
           </div>
+
+          {/* Cases List */}
+          <div className="space-y-2.5">
+            {filteredCases.map(c => {
+              const isSelected = c.id === selectedCaseId;
+              return (
+                <div
+                  key={c.id}
+                  onClick={() => setSelectedCaseId(c.id)}
+                  className={`p-3.5 rounded-2xl border transition cursor-pointer text-xs space-y-2 ${
+                    isSelected 
+                      ? 'border-forest-900 bg-forest-900/5 shadow-xs' 
+                      : 'border-sage-200 hover:border-sage-300 bg-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-forest-950">{c.customerName}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                      c.riskRating === 'HIGH' ? 'bg-rose-100 text-rose-900' : 'bg-emerald-100 text-emerald-900'
+                    }`}>
+                      {c.riskRating} Risk
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] text-neutral-500">
+                    <span>{c.jurisdictions.join(' • ')}</span>
+                    <span className="font-mono font-semibold text-forest-700">{c.readinessPercent}% Ready</span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] pt-1 border-t border-sage-100">
+                    <span className="text-neutral-600">Base: ${(c.materialityCents / 100).toLocaleString()}</span>
+                    <span className="text-amber-700 font-bold">Due {c.deadline}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
         </div>
 
-        {/* Right Column: Comprehensive AI REVIEW BRIEF */}
+        {/* Right Column: Case Deep-Dive & AI Review Brief */}
         <div className="lg:col-span-8 space-y-6">
-          <div className="bg-white border border-sage-300 rounded-3xl p-6 shadow-sm space-y-6">
-            {/* Case Header */}
-            <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-sage-200">
+          
+          {/* Case Header Card */}
+          <div className="bg-white border border-sage-300 rounded-3xl p-6 shadow-xs space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-sage-200 pb-4">
               <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-bold text-sage-900">
-                    AI Review Brief — {currentCase.clientName}
-                  </h3>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sage-100 text-sage-700">
-                    ID: {currentCase.id}
-                  </span>
+                <span className="text-xs font-bold text-forest-700 uppercase tracking-wider">
+                  Case Review View • {selectedCase.id}
+                </span>
+                <h2 className="text-xl font-extrabold text-forest-950 mt-1">
+                  {selectedCase.customerName}
+                </h2>
+                <div className="flex items-center gap-2 mt-1 text-xs text-neutral-600">
+                  <span>Tax Year {selectedCase.taxYear}</span>
+                  <span>•</span>
+                  <span>Jurisdictions: {selectedCase.jurisdictions.join(', ')}</span>
+                  <span>•</span>
+                  <span>AI Confidence: <strong className="text-forest-700">{selectedCase.aiConfidencePercent}%</strong></span>
                 </div>
-                <p className="text-xs text-sage-600 mt-0.5">
-                  Automated verification passed. {currentCase.openExceptions} exception(s) requiring professional determination.
-                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1.5 rounded-xl bg-sage-100 text-forest-950 font-bold text-xs">
+                  {selectedCase.status.replace(/_/g, ' ')}
+                </span>
+              </div>
+            </div>
+
+            {/* AI Review Brief */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-forest-700" />
+                <h3 className="text-sm font-bold text-forest-950">Executive AI Review Brief</h3>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                <div className="p-3.5 rounded-xl bg-sage-50 border border-sage-200 space-y-1">
+                  <strong className="text-neutral-500 block text-[11px]">Income & Tax Base</strong>
+                  <p className="text-neutral-800">{selectedCase.aiBrief.taxBaseSummary}</p>
+                </div>
+                <div className="p-3.5 rounded-xl bg-sage-50 border border-sage-200 space-y-1">
+                  <strong className="text-neutral-500 block text-[11px]">Prior-Year Variance</strong>
+                  <p className="text-neutral-800">{selectedCase.aiBrief.priorYearVariance}</p>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-sage-50 border border-sage-200 text-xs space-y-2">
+                <strong className="text-forest-950 block">Key Positions & Citations</strong>
+                <ul className="space-y-1.5 text-neutral-700">
+                  {selectedCase.aiBrief.keyPositions.map((pos, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <Check className="w-3.5 h-3.5 text-forest-700 shrink-0 mt-0.5" />
+                      <span>{pos}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {selectedCase.aiBrief.outstandingQuestions.length > 0 && (
+                <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-950 space-y-1">
+                  <div className="flex items-center gap-2 font-bold">
+                    <HelpCircle className="w-4 h-4 text-amber-700" />
+                    <span>Outstanding Client Clarifications</span>
+                  </div>
+                  {selectedCase.aiBrief.outstandingQuestions.map((q, idx) => (
+                    <p key={idx} className="text-[11px] text-amber-900">• {q}</p>
+                  ))}
+                </div>
+              )}
+
+              <div className="p-4 rounded-xl bg-forest-950 text-white text-xs space-y-1 border border-forest-900">
+                <span className="text-lime-400 font-bold block text-[11px] uppercase tracking-wider">AI Recommendation</span>
+                <p className="text-sage-200">{selectedCase.aiBrief.aiRecommendation}</p>
+              </div>
+            </div>
+
+            {/* Professional Actions Bar */}
+            <div className="pt-4 border-t border-sage-200 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleAction('APPROVE_AND_SIGN')}
+                  className="px-4 py-2.5 rounded-xl bg-forest-900 text-lime-400 font-bold text-xs hover:bg-forest-950 transition flex items-center gap-1.5 shadow-xs"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>Approve & Sign Return</span>
+                </button>
+
+                <button
+                  onClick={() => setIsModifying(!isModifying)}
+                  className="px-3.5 py-2.5 rounded-xl bg-sage-100 hover:bg-sage-200 text-neutral-800 font-bold text-xs transition border border-sage-300 flex items-center gap-1.5"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>Modify Position</span>
+                </button>
+
+                <button
+                  onClick={() => handleAction('REQUEST_CUSTOMER_INFO')}
+                  className="px-3.5 py-2.5 rounded-xl bg-sage-100 hover:bg-sage-200 text-neutral-800 font-bold text-xs transition border border-sage-300 flex items-center gap-1.5"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span>Request Client Info</span>
+                </button>
               </div>
 
               <div className="flex items-center gap-2">
                 <button
-                  onClick={handleSignCase}
-                  disabled={isCaseSigned}
-                  className={`px-4 py-2 rounded-2xl text-xs font-bold transition flex items-center gap-1.5 ${
-                    isCaseSigned
-                      ? 'bg-pine-700 text-white cursor-default shadow-xs'
-                      : 'bg-lime-400 hover:bg-lime-500 text-pine-900 shadow-xs'
-                  }`}
+                  onClick={() => handleAction('ESCALATE_SENIOR')}
+                  className="px-3 py-2 rounded-xl bg-sage-50 hover:bg-sage-100 text-amber-900 font-bold text-xs transition border border-sage-300"
                 >
-                  <Check className="w-4 h-4" />
-                  <span>{isCaseSigned ? 'Return Signed (PTIN P01948291)' : 'Sign & Approve Return'}</span>
+                  Escalate Senior
+                </button>
+
+                <button
+                  onClick={() => handleAction('ESCALATE_ATTORNEY')}
+                  className="px-3 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-900 font-bold text-xs transition border border-purple-300"
+                >
+                  Escalate Attorney
                 </button>
               </div>
             </div>
 
-            {/* AI Review Brief Dynamic Sections */}
-            <div className="space-y-4">
-              {/* Section 1: Income Reconciliation */}
-              <div className="p-4 rounded-2xl bg-sage-50 border border-sage-200 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-pine-700" />
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-sage-900">
-                      1. Income Reconciliation & Double-Counting Audit
-                    </h4>
-                  </div>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-lime-200 text-pine-900 border border-lime-300">
-                    PASSED (0 Duplicates)
-                  </span>
+            {/* Position Modification Drawer */}
+            {isModifying && (
+              <div className="p-4 rounded-2xl bg-sage-100 border border-sage-300 text-xs space-y-3">
+                <div className="flex justify-between items-center font-bold text-forest-950">
+                  <span>Manual Statutory Override</span>
+                  <button onClick={() => setIsModifying(false)} className="text-neutral-500 hover:text-forest-900">Close</button>
                 </div>
-                <p className="text-xs text-sage-700 leading-relaxed">
-                  {currentCase.incomeSummary}
-                </p>
-              </div>
-
-              {/* Section 2: Evidence & Substantiation */}
-              <div className="p-4 rounded-2xl bg-sage-50 border border-sage-200 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-pine-700" />
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-sage-900">
-                      2. Documentary Evidence & Substantiation Health
-                    </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-neutral-700 mb-1">Adjust Deductible Amount ($)</label>
+                    <input
+                      type="text"
+                      value={overrideValue}
+                      onChange={(e) => setOverrideValue(e.target.value)}
+                      className="w-full p-2.5 rounded-xl bg-white border border-sage-300 text-forest-950 font-mono"
+                    />
                   </div>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-lime-200 text-pine-900 border border-lime-300">
-                    PASSED
-                  </span>
+                  <div>
+                    <label className="block text-neutral-700 mb-1">Professional Reason for Ledger</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Travel log confirms client banquet meeting"
+                      value={overrideNote}
+                      onChange={(e) => setOverrideNote(e.target.value)}
+                      className="w-full p-2.5 rounded-xl bg-white border border-sage-300 text-forest-950"
+                    />
+                  </div>
                 </div>
-                <p className="text-xs text-sage-700 leading-relaxed">
-                  {currentCase.evidenceSummary}
-                </p>
-              </div>
-
-              {/* Section 3: Federal Tax Positions & Material Exception */}
-              <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-amber-700" />
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-amber-900">
-                      3. Federal Schedule C — Preparer Exception Item
-                    </h4>
-                  </div>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-200 text-amber-950 border border-amber-300">
-                    {activeOverride ? 'OVERRIDE SAVED' : 'ACTION REQUIRED'}
-                  </span>
-                </div>
-
-                <div className="p-3.5 bg-white rounded-xl border border-amber-200 text-xs space-y-2">
-                  <div className="font-bold text-sage-900 flex items-center justify-between">
-                    <span>{currentCase.federalDetails.title}</span>
-                    <span className="font-mono text-pine-800">{currentCase.federalDetails.citation}</span>
-                  </div>
-                  <p className="text-sage-700 leading-relaxed">
-                    {currentCase.federalDetails.description}
-                  </p>
-
-                  {/* If override saved, show confirmation card */}
-                  {activeOverride && (
-                    <div className="p-2.5 rounded-xl bg-lime-100 border border-lime-300 text-pine-900 text-xs space-y-1">
-                      <div className="font-bold flex items-center gap-1.5">
-                        <Check className="w-3.5 h-3.5" />
-                        <span>CPA Override Active: ${activeOverride.amount} Deductible</span>
-                      </div>
-                      <p className="text-[11px] text-sage-700 italic">Workpaper Note: "{activeOverride.note}"</p>
-                    </div>
-                  )}
-
-                  <div className="pt-2 flex flex-wrap items-center gap-2">
-                    <button
-                      onClick={() => {
-                        setOverrideActive(false);
-                        setSavedOverrides(prev => {
-                          const c = { ...prev };
-                          delete c[currentCase.id];
-                          return c;
-                        });
-                      }}
-                      className="px-3.5 py-1.5 rounded-xl bg-lime-400 hover:bg-lime-500 text-pine-900 text-xs font-bold transition shadow-xs"
-                    >
-                      Confirm Default Allocation (${currentCase.federalDetails.defaultDeductible})
-                    </button>
-                    <button
-                      onClick={() => setOverrideActive(!overrideActive)}
-                      className="px-3 py-1.5 rounded-xl bg-white hover:bg-sage-100 text-sage-800 text-xs font-semibold transition border border-sage-300 flex items-center gap-1"
-                    >
-                      <Edit3 className="w-3 h-3" />
-                      <span>{overrideActive ? 'Cancel Override' : 'Override Deduction Amount'}</span>
-                    </button>
-                  </div>
-
-                  {overrideActive && (
-                    <div className="mt-3 p-3.5 bg-sage-50 rounded-2xl border border-sage-300 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sage-700 font-semibold">New Deductible Amount: $</span>
-                        <input
-                          type="text"
-                          value={overrideAmount}
-                          onChange={(e) => setOverrideAmount(e.target.value)}
-                          className="w-24 px-2 py-1 bg-white border border-sage-300 rounded-lg text-sage-900 font-mono text-xs font-bold focus:outline-none focus:border-pine-700"
-                        />
-                      </div>
-                      <textarea
-                        value={cpaNotes}
-                        onChange={(e) => setCpaNotes(e.target.value)}
-                        placeholder="Mandatory CPA override justification note (e.g. Client provided substantiation showing 100% company-wide employee event exception under IRC § 274(e)(4))..."
-                        rows={2}
-                        className="w-full p-2.5 bg-white border border-sage-300 rounded-xl text-sage-900 text-xs focus:outline-none focus:border-pine-700"
-                      />
-                      <button
-                        onClick={handleSaveOverride}
-                        className="px-3.5 py-1.5 bg-pine-700 hover:bg-pine-800 text-white rounded-xl text-xs font-bold flex items-center gap-1 transition shadow-xs"
-                      >
-                        <Save className="w-3 h-3" />
-                        <span>Save CPA Override & Audit Workpaper</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Section 4: Multi-State Non-Conformity */}
-              <div className="p-4 rounded-2xl bg-sage-50 border border-sage-200 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-pine-700" />
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-sage-900">
-                      4. State Non-Conformity & Allocation ({currentCase.states.join(' / ')})
-                    </h4>
-                  </div>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-pine-100 text-pine-800 border border-pine-200">
-                    {currentCase.stateDetails.citation}
-                  </span>
-                </div>
-                <div className="text-xs font-bold text-sage-900">{currentCase.stateDetails.title}</div>
-                <p className="text-xs text-sage-700 leading-relaxed">
-                  {currentCase.stateDetails.description}
-                </p>
-              </div>
-            </div>
-
-            {/* Bottom Actions Bar */}
-            <div className="pt-4 border-t border-sage-200 flex flex-wrap items-center justify-between gap-3 text-xs">
-              <div className="flex items-center gap-2 text-sage-600">
-                <span className="font-mono font-semibold">Reviewer PTIN: P01948291</span>
-                <span>•</span>
-                <span>Workpapers Stored with Cryptographic Audit Digest</span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={handleEscalateCase}
-                  disabled={isCaseEscalated}
-                  className={`px-3.5 py-2 rounded-2xl font-bold transition border flex items-center gap-1.5 ${
-                    isCaseEscalated
-                      ? 'bg-pine-100 text-pine-900 border-pine-300'
-                      : 'bg-white hover:bg-sage-100 text-sage-800 border-sage-300'
-                  }`}
+                <button
+                  onClick={() => {
+                    handleAction(`MANUAL_OVERRIDE_${overrideValue}`);
+                    setIsModifying(false);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-forest-900 text-lime-400 font-bold text-xs hover:bg-forest-950 transition"
                 >
-                  <Scale className="w-3.5 h-3.5" />
-                  <span>{isCaseEscalated ? 'Escalated to Attorney ✓' : 'Escalate to Tax Attorney'}</span>
+                  Save Override to Audit Ledger
                 </button>
               </div>
-            </div>
+            )}
+
           </div>
+
+          {/* Domain Specific Data (Sales Tax or Payroll) */}
+          {selectedCase.domainDetails?.salesTax && (
+            <div className="bg-white border border-sage-300 rounded-3xl p-6 shadow-xs space-y-3 text-xs">
+              <h3 className="text-sm font-bold text-forest-950">Sales Tax Jurisdictional Breakdown</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3 bg-sage-50 rounded-xl">
+                  <span className="text-neutral-500 block">Nexus State</span>
+                  <strong className="text-forest-950">{selectedCase.domainDetails.salesTax.nexusStatus}</strong>
+                </div>
+                <div className="p-3 bg-sage-50 rounded-xl">
+                  <span className="text-neutral-500 block">Taxable Sales</span>
+                  <strong className="text-forest-950">{selectedCase.domainDetails.salesTax.taxableSales}</strong>
+                </div>
+                <div className="p-3 bg-sage-50 rounded-xl">
+                  <span className="text-neutral-500 block">Exempt Sales</span>
+                  <strong className="text-forest-950">{selectedCase.domainDetails.salesTax.exemptSales}</strong>
+                </div>
+                <div className="p-3 bg-sage-50 rounded-xl">
+                  <span className="text-neutral-500 block">Collected Tax</span>
+                  <strong className="text-forest-700">{selectedCase.domainDetails.salesTax.collectedTax}</strong>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {selectedCase.domainDetails?.payroll && (
+            <div className="bg-white border border-sage-300 rounded-3xl p-6 shadow-xs space-y-3 text-xs">
+              <h3 className="text-sm font-bold text-forest-950">Payroll & Employer Compliance Detail</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3 bg-sage-50 rounded-xl">
+                  <span className="text-neutral-500 block">Total Gross Wages</span>
+                  <strong className="text-forest-950">{selectedCase.domainDetails.payroll.grossWages}</strong>
+                </div>
+                <div className="p-3 bg-sage-50 rounded-xl">
+                  <span className="text-neutral-500 block">Form 941 Reconciled</span>
+                  <strong className="text-forest-700">Verified Match ✓</strong>
+                </div>
+                <div className="p-3 bg-sage-50 rounded-xl">
+                  <span className="text-neutral-500 block">State SUI Rate</span>
+                  <strong className="text-forest-950">{selectedCase.domainDetails.payroll.suiState}</strong>
+                </div>
+                <div className="p-3 bg-sage-50 rounded-xl">
+                  <span className="text-neutral-500 block">Worker Classification</span>
+                  <strong className="text-forest-700">{selectedCase.domainDetails.payroll.workerClassStatus}</strong>
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
+
       </div>
+
     </div>
   );
 }
