@@ -86,7 +86,7 @@ export function App() {
       setCurrentRole('ATTORNEY_LEGAL_COUNSEL');
       navigate('/app/attorney');
     } else if (targetRole === 'ADMIN') {
-      setCurrentRole('PLATFORM_SUPER_ADMIN');
+      setCurrentRole('CLIENT_OWNER');
       navigate('/admin');
     } else if (targetRole === 'BUSINESS') {
       setCurrentRole('CLIENT_OWNER');

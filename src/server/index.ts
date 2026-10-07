@@ -85,6 +85,7 @@ let tasksQueue: TaxTask[] = [
     deadline: '2027-04-15',
     reason: 'Delta Air Lines ticket to San Francisco ($412.50) requires business purpose confirmation under 26 U.S.C. § 162.',
     requiredEvidence: ['receipt_hash', 'travel_purpose'],
+    auditRecordHash: 'sha256:7b1e8d91f24a68c093a129d816f19812984128f119e8cfa10291e1291823901b',
     createdAt: new Date().toISOString()
   },
   {
@@ -102,6 +103,7 @@ let tasksQueue: TaxTask[] = [
     deadline: '2027-04-15',
     reason: 'Dedicated home office studio (300 sq ft) qualification check under 26 U.S.C. § 280A.',
     requiredEvidence: ['square_footage', 'exclusive_use_declaration'],
+    auditRecordHash: 'sha256:4c2a9e88d12e09ba5511b81928374901fbcda219803450918234857192834012',
     createdAt: new Date().toISOString()
   },
   {
@@ -119,6 +121,7 @@ let tasksQueue: TaxTask[] = [
     deadline: '2027-04-15',
     reason: 'Robinhood transfer proceeds ($1,240) missing Form 1099-B cost basis to prevent IRS CP2000 discrepancy notice.',
     requiredEvidence: ['form_1099b', 'basis_declaration'],
+    auditRecordHash: 'sha256:1a8f9024c08192834bfae1098274615243109283471029384751029384719283',
     createdAt: new Date().toISOString()
   }
 ];
@@ -304,16 +307,20 @@ export function handleApiRequest(req: http.IncomingMessage, res: http.ServerResp
       activeTaxCase.status = 'NEEDS_YOU';
       activeTaxCase.completionPercent = 92;
 
-      AuditLedger.record({
-        actorType: 'TAXPAYER',
-        actorId: email || 'anonymous',
-        action: 'SMART_START_INTAKE_SUBMISSION',
-        targetEntity: 'TaxCase',
-        entityId: activeTaxCase.id,
-        beforeStateHash: activeTaxCase.auditHash,
-        afterStateHash: crypto.createHash('sha256').update(JSON.stringify(activeTaxCase)).digest('hex'),
-        metadata: { filerType, residentState, situationsCount: situations?.length || 0 }
-      });
+      AuditLedger.record(
+        email || 'anonymous',
+        'TAXPAYER',
+        'SMART_START_INTAKE_SUBMISSION',
+        activeTaxCase.id,
+        'TaxCase',
+        {
+          filerType,
+          residentState,
+          situationsCount: situations?.length || 0,
+          beforeStateHash: activeTaxCase.auditHash,
+          afterStateHash: crypto.createHash('sha256').update(JSON.stringify(activeTaxCase)).digest('hex')
+        }
+      );
 
       sendJson(res, 201, {
         success: true,
@@ -379,16 +386,14 @@ export function handleApiRequest(req: http.IncomingMessage, res: http.ServerResp
         activeTaxCase.completionPercent = 100;
       }
 
-      AuditLedger.record({
-        actorType: 'TAXPAYER',
-        actorId: 'alex@rivera-consulting.com',
-        action: 'RESOLVE_TAX_TASK',
-        targetEntity: 'TaxTask',
-        entityId: taskId,
-        beforeStateHash: 'sha256:pending',
-        afterStateHash: 'sha256:resolved',
-        metadata: { choice, resolutionNote, newFederalRefund: activeTaxCase.federalRefund }
-      });
+      AuditLedger.record(
+        'alex@rivera-consulting.com',
+        'TAXPAYER',
+        'RESOLVE_TAX_TASK',
+        taskId,
+        'TaxTask',
+        { choice, resolutionNote, newFederalRefund: activeTaxCase.federalRefund, beforeStateHash: 'sha256:pending', afterStateHash: 'sha256:resolved' }
+      );
 
       sendJson(res, 200, {
         success: true,
@@ -425,16 +430,14 @@ export function handleApiRequest(req: http.IncomingMessage, res: http.ServerResp
 
       documentVault.unshift(newDoc);
 
-      AuditLedger.record({
-        actorType: 'TAXPAYER',
-        actorId: 'alex@rivera-consulting.com',
-        action: 'INGEST_TAXDROP_DOCUMENT',
-        targetEntity: 'Document',
-        entityId: newDoc.id,
-        beforeStateHash: 'genesis',
-        afterStateHash: sha256Hash,
-        metadata: { fileName: newDoc.name, type: newDoc.type, confidence: newDoc.confidence }
-      });
+      AuditLedger.record(
+        'alex@rivera-consulting.com',
+        'TAXPAYER',
+        'INGEST_TAXDROP_DOCUMENT',
+        newDoc.id,
+        'Document',
+        { fileName: newDoc.name, type: newDoc.type, confidence: newDoc.confidence, sourceHash: sha256Hash }
+      );
 
       sendJson(res, 201, {
         success: true,
@@ -514,20 +517,20 @@ export function handleApiRequest(req: http.IncomingMessage, res: http.ServerResp
 
       const transmissionHash = 'sha256:mef_' + crypto.createHash('sha256').update(taxpayerSignature + activeTaxCase.id + Date.now()).digest('hex');
 
-      AuditLedger.record({
-        actorType: 'TAXPAYER',
-        actorId: activeTaxCase.entityName,
-        action: 'FORM_8879_EFILE_TRANSMISSION',
-        targetEntity: 'TaxCase',
-        entityId: activeTaxCase.id,
-        beforeStateHash: activeTaxCase.auditHash,
-        afterStateHash: transmissionHash,
-        metadata: { 
+      AuditLedger.record(
+        activeTaxCase.entityName,
+        'TAXPAYER',
+        'FORM_8879_EFILE_TRANSMISSION',
+        activeTaxCase.id,
+        'TaxCase',
+        { 
           signature: taxpayerSignature, 
           mefSchema: 'IRS_Form1040_v2026',
-          stateMefSchema: 'CA_FTB_Form540_v2026'
+          stateMefSchema: 'CA_FTB_Form540_v2026',
+          beforeStateHash: activeTaxCase.auditHash,
+          afterStateHash: transmissionHash
         }
-      });
+      );
 
       sendJson(res, 200, {
         success: true,

@@ -13,6 +13,7 @@ export type TaskStatus =
   | 'OPEN' 
   | 'IN_PROGRESS' 
   | 'AWAITING_INPUT' 
+  | 'PENDING_TAXPAYER'
   | 'ESCALATED' 
   | 'RESOLVED' 
   | 'DISMISSED';
@@ -34,7 +35,9 @@ export interface TaxTask {
     | 'NEXUS_REGISTRATION'
     | 'WORKER_CLASSIFICATION'
     | 'PAYMENT_AUTHORIZATION'
-    | 'EFILE_TRANSMISSION';
+    | 'EFILE_TRANSMISSION'
+    | 'DEDUCTION_VERIFICATION'
+    | 'COST_BASIS_RECONCILIATION';
   
   ownerType: TaskOwnerType;
   ownerId?: string;
