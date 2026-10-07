@@ -10,13 +10,13 @@ import {
   ArrowRight, 
   Download, 
   Layers, 
-  Info,
-  Send,
-  Building2,
-  Calendar,
-  AlertTriangle,
-  Search,
-  Check
+  Info, 
+  Send, 
+  Building2, 
+  Calendar, 
+  AlertTriangle, 
+  Search, 
+  Check 
 } from 'lucide-react';
 import { TaxDropZone } from './TaxDropZone';
 import { TaxInboxCardQueue } from './TaxInboxCardQueue';
@@ -193,75 +193,71 @@ export function B2CTaxpayerView() {
     <div className="space-y-6">
       {/* Toast Notification */}
       {actionFeedback && (
-        <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between shadow-lg backdrop-blur">
+        <div className="p-3.5 rounded-2xl bg-white border border-pine-700/30 text-pine-900 text-xs flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            <span>{actionFeedback}</span>
+            <CheckCircle2 className="w-4 h-4 text-pine-700" />
+            <span className="font-medium">{actionFeedback}</span>
           </div>
-          <span className="font-mono text-[10px] text-emerald-400">Recalculated</span>
+          <span className="font-mono text-[10px] text-pine-700 font-bold bg-lime-400/30 px-2 py-0.5 rounded-full">Recalculated</span>
         </div>
       )}
 
-      {/* Hero Completion Card */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 border border-slate-800 shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-          <Sparkles className="w-64 h-64 text-blue-400" />
-        </div>
-
+      {/* Hero Completion Card in Deep Pine & White (Matching Design Reference) */}
+      <div className="p-6 sm:p-8 rounded-3xl bg-pine-700 text-white shadow-sm border border-pine-800 relative overflow-hidden">
         <div className="max-w-3xl space-y-4">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-lime-400/20 text-lime-300 border border-lime-400/30">
               Tax Year 2026 • Form 1040 + California Form 540
             </span>
-            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Zero-Hallucination Verified</span>
+            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-white/10 text-white border border-white/20 flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-lime-400" />
+              <span>Zero-Hallucination Provenance</span>
             </span>
           </div>
 
-          <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-100 tracking-tight">
-            Your 2026 Taxes are <span className="text-blue-400 font-mono">{completionPercent}%</span> Ready
+          <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+            Your 2026 Taxes are <span className="text-lime-400 font-mono">{completionPercent}%</span> Ready
           </h1>
 
-          <p className="text-sm text-slate-400 leading-relaxed max-w-2xl">
+          <p className="text-sm text-sage-200 leading-relaxed max-w-2xl">
             The application has collected your 1099 contracts, matched 37 receipts, and computed your deductions. 
             {questionsCount > 0 ? (
-              <span className="text-amber-300 font-semibold"> Only {questionsCount} quick items need your confirmation before e-filing.</span>
+              <span className="text-lime-300 font-semibold"> Only {questionsCount} quick items need your confirmation before e-filing.</span>
             ) : (
-              <span className="text-emerald-300 font-semibold"> All items resolved. Ready for final review and e-filing!</span>
+              <span className="text-lime-300 font-semibold"> All items resolved. Ready for final review and e-filing!</span>
             )}
           </p>
 
-          {/* Progress Bar */}
-          <div className="w-full bg-slate-800/80 rounded-full h-3 overflow-hidden border border-slate-700/60">
+          {/* Progress Bar in Lime Green */}
+          <div className="w-full bg-pine-900/80 rounded-full h-3 overflow-hidden border border-pine-800">
             <div 
-              className="bg-gradient-to-r from-blue-600 via-blue-500 to-emerald-500 h-3 rounded-full transition-all duration-700 ease-out"
+              className="bg-lime-400 h-3 rounded-full transition-all duration-700 ease-out"
               style={{ width: `${completionPercent}%` }}
             />
           </div>
 
-          {/* Refund & Due Financial Figures */}
+          {/* Refund & Due Financial Figures as Crisp White Cards */}
           <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/80 flex items-center justify-between">
+            <div className="p-5 rounded-2xl bg-white border border-sage-300 text-sage-900 shadow-xs flex items-center justify-between">
               <div>
-                <span className="text-xs text-slate-400 font-medium uppercase tracking-wider block">
+                <span className="text-xs text-sage-500 font-medium uppercase tracking-wider block">
                   Federal Estimated Refund
                 </span>
-                <span className="text-2xl sm:text-3xl font-extrabold text-emerald-400 font-mono tabular-nums">
+                <span className="text-2xl sm:text-3xl font-extrabold text-pine-700 font-mono tabular-nums">
                   +${federalRefund.toLocaleString('en-US', { minimumFractionDigits: 0 })}
                 </span>
               </div>
-              <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold">
+              <div className="px-3 py-1 rounded-xl bg-lime-400/30 text-pine-900 border border-lime-400/50 text-xs font-bold">
                 Form 1040
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/80 flex items-center justify-between">
+            <div className="p-5 rounded-2xl bg-white border border-sage-300 text-sage-900 shadow-xs flex items-center justify-between">
               <div>
-                <span className="text-xs text-slate-400 font-medium uppercase tracking-wider block">
+                <span className="text-xs text-sage-500 font-medium uppercase tracking-wider block">
                   California Balance Due
                 </span>
-                <span className="text-2xl sm:text-3xl font-extrabold text-rose-400 font-mono tabular-nums">
+                <span className="text-2xl sm:text-3xl font-extrabold text-rose-600 font-mono tabular-nums">
                   -${stateDue.toLocaleString('en-US', { minimumFractionDigits: 0 })}
                 </span>
               </div>
@@ -270,7 +266,7 @@ export function B2CTaxpayerView() {
                   setShowAiAssistant(true);
                   handleAskAssistant("Why do I owe California $1,840 when I get a Federal refund of $4,120?");
                 }}
-                className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-blue-400 hover:text-blue-300 text-xs font-semibold transition border border-slate-700 flex items-center gap-1"
+                className="px-3 py-1.5 rounded-xl bg-pine-700 hover:bg-pine-800 text-lime-300 text-xs font-bold transition flex items-center gap-1 shadow-2xs"
               >
                 <HelpCircle className="w-3.5 h-3.5" />
                 <span>Why do I owe?</span>
@@ -290,89 +286,89 @@ export function B2CTaxpayerView() {
           />
 
           {/* Interactive Lineage Summary: Clickable Line Items */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+          <div className="bg-white border border-sage-300 rounded-3xl p-6 shadow-xs space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <FileText className="w-5 h-5 text-blue-400" />
-                <h3 className="text-sm font-bold text-slate-100">
+                <FileText className="w-5 h-5 text-pine-700" />
+                <h3 className="text-sm font-bold text-sage-900">
                   Tax Position Lineage & Summary
                 </h3>
               </div>
-              <span className="text-xs text-slate-400">
-                Click any row to open <strong className="text-blue-400">Prove This Number</strong>
+              <span className="text-xs text-sage-500">
+                Click any row to open <strong className="text-pine-700">Prove This Number</strong>
               </span>
             </div>
 
-            <div className="divide-y divide-slate-800 border border-slate-800 rounded-xl overflow-hidden bg-slate-950">
+            <div className="divide-y divide-sage-200 border border-sage-200 rounded-2xl overflow-hidden bg-sage-50">
               {/* Row 1: Gross Income */}
               <div 
                 onClick={() => setSelectedProvenance(PROVENANCE_DATA_MAP.GROSS_INCOME)}
-                className="p-3.5 flex items-center justify-between text-xs hover:bg-blue-500/5 transition cursor-pointer group"
+                className="p-3.5 flex items-center justify-between text-xs hover:bg-lime-100/50 transition cursor-pointer group"
               >
                 <div>
-                  <div className="font-semibold text-slate-200 group-hover:text-blue-300 flex items-center gap-1.5">
+                  <div className="font-semibold text-sage-900 group-hover:text-pine-700 flex items-center gap-1.5">
                     <span>Total Gross Income (Form 1040 Line 9)</span>
-                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">Prove 🔍</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-lime-400 text-pine-900 font-bold">Prove 🔍</span>
                   </div>
-                  <div className="text-[11px] text-slate-400">W-2 + 1099-NEC consulting compensation under 26 U.S.C. § 61</div>
+                  <div className="text-[11px] text-sage-500">W-2 + 1099-NEC consulting compensation under 26 U.S.C. § 61</div>
                 </div>
                 <div className="text-right">
-                  <div className="font-mono font-bold text-slate-100 tabular-nums text-sm">$148,200</div>
-                  <span className="text-[10px] text-emerald-400 font-mono">Reconciled (0 dups)</span>
+                  <div className="font-mono font-bold text-pine-900 tabular-nums text-sm">$148,200</div>
+                  <span className="text-[10px] text-pine-700 font-bold font-mono">Reconciled (0 dups)</span>
                 </div>
               </div>
 
               {/* Row 2: Schedule C Expenses */}
               <div 
                 onClick={() => setSelectedProvenance(PROVENANCE_DATA_MAP.SCHEDULE_C_EXPENSES)}
-                className="p-3.5 flex items-center justify-between text-xs hover:bg-blue-500/5 transition cursor-pointer group"
+                className="p-3.5 flex items-center justify-between text-xs hover:bg-lime-100/50 transition cursor-pointer group"
               >
                 <div>
-                  <div className="font-semibold text-slate-200 group-hover:text-blue-300 flex items-center gap-1.5">
+                  <div className="font-semibold text-sage-900 group-hover:text-pine-700 flex items-center gap-1.5">
                     <span>Schedule C Business Expenses (Line 27a)</span>
-                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">Prove 🔍</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-lime-400 text-pine-900 font-bold">Prove 🔍</span>
                   </div>
-                  <div className="text-[11px] text-slate-400">AWS hosting, GitHub, and SaaS tools under 26 U.S.C. § 162</div>
+                  <div className="text-[11px] text-sage-500">AWS hosting, GitHub, and SaaS tools under 26 U.S.C. § 162</div>
                 </div>
                 <div className="text-right">
-                  <div className="font-mono font-bold text-slate-100 tabular-nums text-sm">$18,490</div>
-                  <span className="text-[10px] text-blue-400 font-mono">100% Documented</span>
+                  <div className="font-mono font-bold text-pine-900 tabular-nums text-sm">$18,490</div>
+                  <span className="text-[10px] text-pine-700 font-bold font-mono">100% Documented</span>
                 </div>
               </div>
 
               {/* Row 3: QBI Deduction */}
               <div 
                 onClick={() => setSelectedProvenance(PROVENANCE_DATA_MAP.QBI_DEDUCTION)}
-                className="p-3.5 flex items-center justify-between text-xs hover:bg-blue-500/5 transition cursor-pointer group"
+                className="p-3.5 flex items-center justify-between text-xs hover:bg-lime-100/50 transition cursor-pointer group"
               >
                 <div>
-                  <div className="font-semibold text-slate-200 group-hover:text-blue-300 flex items-center gap-1.5">
+                  <div className="font-semibold text-sage-900 group-hover:text-pine-700 flex items-center gap-1.5">
                     <span>Qualified Business Income Deduction (Line 13)</span>
-                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">Prove 🔍</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-lime-400 text-pine-900 font-bold">Prove 🔍</span>
                   </div>
-                  <div className="text-[11px] text-slate-400">20% Pass-through deduction under 26 U.S.C. § 199A</div>
+                  <div className="text-[11px] text-sage-500">20% Pass-through deduction under 26 U.S.C. § 199A</div>
                 </div>
                 <div className="text-right">
-                  <div className="font-mono font-bold text-slate-100 tabular-nums text-sm">$11,950</div>
-                  <span className="text-[10px] text-purple-400 font-mono">Deterministic Formula</span>
+                  <div className="font-mono font-bold text-pine-900 tabular-nums text-sm">$11,950</div>
+                  <span className="text-[10px] text-pine-700 font-bold font-mono">Deterministic Formula</span>
                 </div>
               </div>
 
               {/* Row 4: California HSA Addition */}
               <div 
                 onClick={() => setSelectedProvenance(PROVENANCE_DATA_MAP.CA_HSA_ADDITION)}
-                className="p-3.5 flex items-center justify-between text-xs hover:bg-amber-500/5 transition cursor-pointer group"
+                className="p-3.5 flex items-center justify-between text-xs hover:bg-lime-100/50 transition cursor-pointer group"
               >
                 <div>
-                  <div className="font-semibold text-slate-200 group-hover:text-amber-300 flex items-center gap-1.5">
+                  <div className="font-semibold text-sage-900 group-hover:text-amber-800 flex items-center gap-1.5">
                     <span>California HSA Addition Modification (Sch CA Line 13)</span>
-                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">Prove 🔍</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 font-bold">Prove 🔍</span>
                   </div>
-                  <div className="text-[11px] text-slate-400">State non-conformity add-back under Cal. RTC § 17215.4</div>
+                  <div className="text-[11px] text-sage-500">State non-conformity add-back under Cal. RTC § 17215.4</div>
                 </div>
                 <div className="text-right">
-                  <div className="font-mono font-bold text-amber-400 tabular-nums text-sm">+$4,150</div>
-                  <span className="text-[10px] text-amber-300 font-mono">State Non-Conformity</span>
+                  <div className="font-mono font-bold text-amber-700 tabular-nums text-sm">+$4,150</div>
+                  <span className="text-[10px] text-amber-800 font-semibold font-mono">State Non-Conformity</span>
                 </div>
               </div>
             </div>
@@ -384,22 +380,22 @@ export function B2CTaxpayerView() {
           <TaxDropZone />
 
           {/* Contextual AI Explainer Widget with Interactive Input */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+          <div className="bg-white border border-sage-300 rounded-3xl p-6 shadow-xs space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400">
-                  <Sparkles className="w-4 h-4" />
+                <div className="p-1.5 rounded-xl bg-lime-400/30 text-pine-800">
+                  <Sparkles className="w-4 h-4 text-pine-700" />
                 </div>
-                <h3 className="text-sm font-bold text-slate-100">
+                <h3 className="text-sm font-bold text-sage-900">
                   Contextual Tax AI Assistant
                 </h3>
               </div>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono">
-                Tax Authority Grounded
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-pine-700 text-white font-mono">
+                Statute Grounded
               </span>
             </div>
 
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-sage-500">
               Ask any question about your numbers, deductions, or state rules. Answers cite exact statutes.
             </p>
 
@@ -407,19 +403,19 @@ export function B2CTaxpayerView() {
             <div className="flex flex-wrap gap-1.5">
               <button
                 onClick={() => handleAskAssistant("Why do I owe California $1,840?")}
-                className="px-2.5 py-1 rounded-lg text-[11px] bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800 transition"
+                className="px-2.5 py-1 rounded-2xl text-[11px] bg-sage-100 hover:bg-sage-200 text-sage-800 border border-sage-300 transition"
               >
                 "Why do I owe California $1,840?"
               </button>
               <button
                 onClick={() => handleAskAssistant("How is my QBI deduction calculated?")}
-                className="px-2.5 py-1 rounded-lg text-[11px] bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800 transition"
+                className="px-2.5 py-1 rounded-2xl text-[11px] bg-sage-100 hover:bg-sage-200 text-sage-800 border border-sage-300 transition"
               >
                 "How is QBI calculated?"
               </button>
               <button
                 onClick={() => handleAskAssistant("Are my AWS server costs 100% deductible?")}
-                className="px-2.5 py-1 rounded-lg text-[11px] bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800 transition"
+                className="px-2.5 py-1 rounded-2xl text-[11px] bg-sage-100 hover:bg-sage-200 text-sage-800 border border-sage-300 transition"
               >
                 "Are AWS costs deductible?"
               </button>
@@ -433,25 +429,25 @@ export function B2CTaxpayerView() {
                   value={aiAssistantInput}
                   onChange={(e) => setAiAssistantInput(e.target.value)}
                   placeholder="Ask any tax question (e.g. 'What is the California 179 limit?')..."
-                  className="w-full pl-8 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                  className="w-full pl-8 pr-3 py-2 bg-sage-50 border border-sage-300 rounded-2xl text-xs text-sage-900 placeholder-sage-400 focus:outline-none focus:border-pine-600"
                 />
-                <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
+                <Search className="w-3.5 h-3.5 text-sage-500 absolute left-2.5 top-2.5" />
               </div>
               <button
                 type="submit"
-                className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold transition shrink-0"
+                className="px-4 py-2 bg-pine-700 hover:bg-pine-800 text-white rounded-2xl text-xs font-bold transition shrink-0"
               >
                 Ask AI
               </button>
             </form>
 
             {aiAssistantAnswer && (
-              <div className="p-4 rounded-xl bg-slate-950 border border-blue-500/30 text-xs space-y-2">
-                <div className="font-semibold text-blue-300 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-blue-400" />
+              <div className="p-4 rounded-2xl bg-pine-700 text-white text-xs space-y-2">
+                <div className="font-semibold text-lime-300 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-lime-400" />
                   <span>Authoritative Answer</span>
                 </div>
-                <p className="text-slate-300 leading-relaxed">
+                <p className="text-sage-100 leading-relaxed">
                   {aiAssistantAnswer}
                 </p>
               </div>
@@ -459,24 +455,24 @@ export function B2CTaxpayerView() {
           </div>
 
           {/* E-File Ready Card */}
-          <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
-            <h4 className="text-sm font-bold text-slate-100 flex items-center justify-between">
+          <div className="p-6 rounded-3xl bg-white border border-sage-300 shadow-xs space-y-4">
+            <h4 className="text-sm font-bold text-sage-900 flex items-center justify-between">
               <span>Electronic Filing Status</span>
-              <span className="text-xs font-mono text-blue-400">IRS MeF 2026 Ready</span>
+              <span className="text-xs font-mono text-pine-700 font-bold bg-lime-400/30 px-2 py-0.5 rounded-full">IRS MeF 2026 Ready</span>
             </h4>
 
-            <div className="space-y-2 text-xs text-slate-400">
+            <div className="space-y-2 text-xs text-sage-600">
               <div className="flex items-center justify-between">
                 <span>Federal Form 1040:</span>
-                <span className="text-emerald-400 font-semibold">Ready to E-File</span>
+                <span className="text-pine-700 font-bold">Ready to E-File</span>
               </div>
               <div className="flex items-center justify-between">
                 <span>California Form 540:</span>
-                <span className="text-emerald-400 font-semibold">Ready to E-File</span>
+                <span className="text-pine-700 font-bold">Ready to E-File</span>
               </div>
               <div className="flex items-center justify-between">
                 <span>Professional Review:</span>
-                <span className="text-blue-400 font-semibold">Optional CPA Sign-off Available</span>
+                <span className="text-sage-800 font-semibold">Optional CPA Sign-off Available</span>
               </div>
             </div>
 
@@ -486,21 +482,21 @@ export function B2CTaxpayerView() {
                 triggerToast('Return successfully staged and queued for IRS & FTB electronic transmission!');
               }}
               disabled={eFileSubmitted}
-              className={`w-full py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition shadow-lg ${
+              className={`w-full py-3.5 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition shadow-sm ${
                 eFileSubmitted
-                  ? 'bg-emerald-600 text-white cursor-default'
-                  : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/20'
+                  ? 'bg-pine-700 text-white cursor-default'
+                  : 'bg-lime-400 hover:bg-lime-500 text-pine-900'
               }`}
             >
               {eFileSubmitted ? (
                 <>
-                  <CheckCircle2 className="w-4 h-4" />
+                  <CheckCircle2 className="w-4 h-4 text-lime-300" />
                   <span>Returns Successfully Staged for E-File!</span>
                 </>
               ) : (
                 <>
                   <Send className="w-4 h-4" />
-                  <span>Authorize & Transmit Returns to IRS + FTB</span>
+                  <span>[AUTHORIZE & TRANSMIT RETURNS TO IRS + FTB]</span>
                 </>
               )}
             </button>

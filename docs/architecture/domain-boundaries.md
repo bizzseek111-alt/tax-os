@@ -168,3 +168,31 @@ graph TD
 ### Domain 26: Partner / B2B2C API
 * **Scope**: Headless REST endpoints, webhooks, and partner SDKs for embedded tax workflows.
 * **Isolation Rule**: Enforces partner rate limits, API key authentication, and scoped tenant authorization.
+
+### Domain 27: Sales & Use Tax Engine
+* **Scope**: Multi-tier composite rate calculations (state, county, city, district), economic and physical nexus monitoring, transaction sourcing (origin/destination), SaaS and digital goods taxability catalog, marketplace facilitator deductions, consumer use tax accruals, periodic return generation (e.g., CA CDTFA-401, NY ST-100).
+* **Isolation Rule**: Consumes normalized transaction feeds; isolated from income tax returns and payroll wage records.
+
+### Domain 28: Payroll & Employment Tax Engine
+* **Scope**: Algorithmic worker classification guard (ABC test & common law), gross-to-net integer-cents payroll engine, federal income tax withholding (FITW), FICA (Social Security & Medicare, Additional Medicare), FUTA, state withholding (SITW), state unemployment (SUTA/SUI), semi-weekly and monthly deposit schedule monitor, quarterly/annual return generation (Form 941, Form 940, W-2/W-3).
+* **Isolation Rule**: Employee SSNs and individual paystubs are cryptographically quarantined; exposes strictly aggregated wage deduction totals to income tax.
+
+### Domain 29: Employer Compliance
+* **Scope**: New hire reporting, state worker compensation registration tracking, mandatory workplace labor posting compliance, E-Verify verification, state-mandated retirement plan compliance (e.g., CalSavers, NY Secure Choice), Form I-9 document retention.
+* **Isolation Rule**: Enforces employer labor law invariants without exposing worker personnel records to tax filing agents.
+
+### Domain 30: Business Tax Compliance
+* **Scope**: Entity lifecycle governance, Secretary of State annual report filings, state franchise tax compliance (e.g., California $800 minimum franchise tax, Delaware corporate franchise tax), FinCEN Beneficial Ownership Information (BOI) reporting, municipal business licenses.
+* **Isolation Rule**: Operates at the legal entity governance level; decoupled from periodic transactional return engines.
+
+### Domain 31: Tax Registrations
+* **Scope**: Universal registration state machine managing agency account applications across federal (EIN), state revenue departments (sales tax permits, withholding numbers), state labor departments (SUTA unemployment accounts), and municipal business tax certificates.
+* **Isolation Rule**: Single source of truth for jurisdictional account identifiers and active tax authority credentials.
+
+### Domain 32: Tax Deadlines & Universal Calendar
+* **Scope**: Unified temporal orchestrator tracking statutory deadlines, semi-weekly/monthly payroll deposit cutoffs, sales tax return filing dates, safe harbor estimated tax dates, extension deadlines, disaster relief postponements.
+* **Isolation Rule**: Universal temporal publisher emitting time-based event triggers across all platform domains.
+
+### Domain 33: Tax Payments & Treasury Ledger
+* **Scope**: Treasury payment gateway executing ACH debits, EFTPS federal tax deposits, state DOR web payments, payment voucher generation (1040-ES, 540-ES), bank reconciliation, confirmation number tracking.
+* **Isolation Rule**: Owns payment execution and proof confirmation; requires dual-authorization for high-value remittances.

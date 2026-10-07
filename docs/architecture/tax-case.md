@@ -33,56 +33,53 @@ Agents do not chat loosely with one another. Agents read from the structured sta
 
 ---
 
-## 2. Formal Entity Schema References
+## 2. Compositional Multi-Domain Entity Architecture
 
-A `TaxCase` maintains strict foreign key references and normalized sub-collections across 26 canonical domains:
+In Autonomous Tax OS, a `TaxCase` is an Enterprise Root Aggregate that composes typed domain obligations rather than forcing a monolithic single-return hierarchy:
+
+```
+TaxCase (Root Enterprise Engagement Aggregate)
+    │
+    ├── IncomeTaxCase (Annual Federal Form 1040/1120-S & 5-State Income Returns)
+    ├── SalesTaxObligation[] (Periodic Jurisdictional Filings & Composite Sourcing)
+    ├── PayrollTaxObligation[] (Deposit Runs, Form 941, 940, W-2/W-3, SUTA)
+    ├── TaxRegistrations (EIN, CDTFA, NY DTF, SUTA ID State Accounts)
+    ├── TaxDeadlines (Unified Calendar & Statutory Cutoffs)
+    └── TaxPayments (Treasury Remittances & Confirmation Proofs)
+```
 
 ```typescript
 export interface TaxCase {
   id: string;                          // UUID v4
   tenantId: string;                    // Organization / Firm Partition
-  businessId?: string;                 // Associated Business / LLC if applicable
-  taxYear: number;                     // e.g. 2026
-  lifecycleState: TaxCaseState;        // Current State Machine Position
+  entityId: string;                    // Associated Legal Entity / Individual
+  taxYear: number;                     // Primary Calendar Year Anchor (e.g. 2026)
+  lifecycleState: TaxCaseState;        // Overall Engagement Lifecycle State
   
-  // 1. Identity & Household
-  taxpayerId: string;
-  spouseId?: string;
-  dependentIds: string[];
-  residencyPeriods: ResidencyPeriod[];
-  activeJurisdictions: string[];       // ['US-FED', 'US-CA', 'US-NY']
+  // 1. Compositional Domain Obligations
+  incomeTaxCase?: IncomeTaxCase;                 // Annual Federal & State Income Return
+  salesTaxObligations: SalesTaxObligation[];     // Jurisdictional Periodic Filings (Monthly/Quarterly)
+  payrollTaxObligations: PayrollTaxObligation[]; // Deposit & Reporting Cycles (941, 940, W-2)
   
-  // 2. Financial & Business Graph
+  // 2. Shared Enterprise Compliance & Operations
+  registrations: RegistrationProfile;            // Federal & State Tax Agency Accounts
+  deadlines: TaxDeadline[];                      // Aggregated Universal Compliance Calendar
+  payments: TaxPaymentRecord[];                  // Master Treasury Remittance Receipts
+  
+  // 3. Financial & Business Graph References
   businessEntityIds: string[];
   connectedAccountIds: string[];
   documentIds: string[];
   transactionIds: string[];
-  incomeSourceIds: string[];
-  assetIds: string[];
   
-  // 3. Tax Intelligence & Positions
-  reconstructedFactIds: string[];
-  evidenceIds: string[];
-  appliedRuleSetVersions: Record<string, string>; // { 'US-FED': '2026.1', 'US-CA': '2026.1' }
-  taxPositions: TaxPosition[];
-  
-  // 4. Orchestration & Resolution
-  openIssues: TaxIssue[];
+  // 4. Intelligence & Shared Provenance
+  openIssues: TaxIssue[];                        // Tax Inbox Inquiries
   pendingQuestions: TaxQuestion[];
   activeTasks: AgentTask[];
-  agentRuns: AgentRunRecord[];
-  
-  // 5. Calculation, Review & Filing
-  deterministicCalculations: CalculationResult[];
-  professionalReviews: ProfessionalReviewRecord[];
-  filingSubmission?: FilingSubmission;
-  noticeIds: string[];
-  
-  // 6. Audit & Provenance
-  auditTrail: AuditEvent[];
-  createdAt: string;                   // ISO 8601
-  updatedAt: string;                   // ISO 8601
-  lockVersion: number;                 // Optimistic Concurrency Control
+  evidenceGraphRef: string;                      // Pointer to immutable DAG of documentary proofs
+  taxGraphRef: string;                           // Pointer to normalized economic reality graph
+  auditLedgerId: string;                         // Hash-chained WORM audit sequence identifier
+  lockVersion: number;                           // Optimistic Concurrency Control
 }
 ```
 

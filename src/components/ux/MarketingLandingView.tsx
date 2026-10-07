@@ -50,13 +50,13 @@ export function MarketingLandingView({ onStartFiling, onOpenOnboarding, onSwitch
     <div className="space-y-12 pb-12">
       {/* Top Audience Switcher */}
       <div className="flex justify-center">
-        <div className="bg-slate-900 border border-slate-800 p-1.5 rounded-2xl flex items-center gap-1 shadow-lg">
+        <div className="bg-white border border-sage-300 p-1.5 rounded-2xl flex items-center gap-1 shadow-sm">
           <button
             onClick={() => setAudience('B2C_CONSUMER')}
             className={`px-5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2 ${
               audience === 'B2C_CONSUMER'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-pine-700 text-white shadow-sm'
+                : 'text-sage-600 hover:text-sage-900'
             }`}
           >
             <User className="w-3.5 h-3.5" />
@@ -67,8 +67,8 @@ export function MarketingLandingView({ onStartFiling, onOpenOnboarding, onSwitch
             onClick={() => setAudience('B2B_FIRM')}
             className={`px-5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2 ${
               audience === 'B2B_FIRM'
-                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-pine-700 text-white shadow-sm'
+                : 'text-sage-600 hover:text-sage-900'
             }`}
           >
             <Building2 className="w-3.5 h-3.5" />
@@ -80,32 +80,32 @@ export function MarketingLandingView({ onStartFiling, onOpenOnboarding, onSwitch
       {/* HERO SECTION */}
       {audience === 'B2C_CONSUMER' ? (
         <div className="text-center max-w-4xl mx-auto space-y-6 pt-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-300 border border-blue-500/20">
-            <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-lime-200 text-pine-900 border border-lime-300">
+            <Sparkles className="w-3.5 h-3.5 text-pine-800" />
             <span>The AI-Native Tax Operating System</span>
           </div>
 
           {/* Headline Carousel Selector */}
           <div className="space-y-3">
-            <h1 className="text-4xl md:text-6xl font-extrabold text-white tracking-tight">
+            <h1 className="text-4xl md:text-6xl font-extrabold text-sage-950 tracking-tight">
               {b2cHeadlines[selectedHeadlineIdx].title}
             </h1>
-            <p className="text-base md:text-lg text-slate-300 max-w-2xl mx-auto font-normal">
+            <p className="text-base md:text-lg text-sage-600 max-w-2xl mx-auto font-normal">
               {b2cHeadlines[selectedHeadlineIdx].subtitle}
             </p>
           </div>
 
           {/* Headline Concept Buttons */}
           <div className="flex items-center justify-center gap-2 flex-wrap pt-2">
-            <span className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold mr-1">Headline Concept:</span>
+            <span className="text-[11px] text-sage-500 uppercase tracking-wider font-semibold mr-1">Headline Concept:</span>
             {b2cHeadlines.map((h, idx) => (
               <button
                 key={idx}
                 onClick={() => setSelectedHeadlineIdx(idx)}
                 className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition border ${
                   selectedHeadlineIdx === idx
-                    ? 'bg-blue-600/20 border-blue-500 text-blue-300'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                    ? 'bg-pine-700 border-pine-700 text-white'
+                    : 'bg-white border-sage-300 text-sage-600 hover:text-sage-900 hover:border-sage-400'
                 }`}
               >
                 Concept {idx + 1}
@@ -117,31 +117,31 @@ export function MarketingLandingView({ onStartFiling, onOpenOnboarding, onSwitch
           <div className="flex items-center justify-center gap-4 pt-4">
             <button
               onClick={onOpenOnboarding}
-              className="px-6 py-3.5 rounded-2xl font-bold text-sm bg-blue-600 hover:bg-blue-500 text-white shadow-xl shadow-blue-600/30 transition flex items-center gap-2"
+              className="px-6 py-3.5 rounded-2xl font-bold text-sm bg-lime-400 hover:bg-lime-500 text-pine-900 shadow-md transition flex items-center gap-2"
             >
               <span>Build My 2026 Tax Workspace</span>
               <ArrowRight className="w-4 h-4" />
             </button>
             <button
               onClick={onStartFiling}
-              className="px-6 py-3.5 rounded-2xl font-bold text-sm bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 transition"
+              className="px-6 py-3.5 rounded-2xl font-bold text-sm bg-white hover:bg-sage-100 text-sage-800 border border-sage-300 shadow-sm transition"
             >
               View Live Demo Return (Alex Rivera)
             </button>
           </div>
 
           {/* Trust Guarantees */}
-          <div className="flex items-center justify-center gap-6 pt-6 text-xs text-slate-400 flex-wrap">
-            <span className="flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+          <div className="flex items-center justify-center gap-6 pt-6 text-xs text-sage-600 flex-wrap">
+            <span className="flex items-center gap-1.5 font-medium">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
               100% Deterministic Math ($0.00 Drift)
             </span>
-            <span className="flex items-center gap-1.5">
-              <Scale className="w-4 h-4 text-purple-400" />
+            <span className="flex items-center gap-1.5 font-medium">
+              <Scale className="w-4 h-4 text-pine-700" />
               Every Line Item Grounded in Tax Law
             </span>
-            <span className="flex items-center gap-1.5">
-              <Lock className="w-4 h-4 text-blue-400" />
+            <span className="flex items-center gap-1.5 font-medium">
+              <Lock className="w-4 h-4 text-pine-800" />
               AES-256 Zero-Trust PII Isolation
             </span>
           </div>
@@ -149,25 +149,25 @@ export function MarketingLandingView({ onStartFiling, onOpenOnboarding, onSwitch
       ) : (
         /* B2B Firm Positioning Hero */
         <div className="text-center max-w-4xl mx-auto space-y-6 pt-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
-            <Building2 className="w-3.5 h-3.5 text-indigo-400" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-lime-200 text-pine-900 border border-lime-300">
+            <Building2 className="w-3.5 h-3.5 text-pine-800" />
             <span>For Accounting & Advisory Firms</span>
           </div>
 
-          <h1 className="text-4xl md:text-6xl font-extrabold text-white tracking-tight">
+          <h1 className="text-4xl md:text-6xl font-extrabold text-sage-950 tracking-tight">
             “Let AI prepare the work. <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">
+            <span className="text-pine-700">
               Your team reviews what matters.
             </span>”
           </h1>
-          <p className="text-base md:text-lg text-slate-300 max-w-2xl mx-auto font-normal">
+          <p className="text-base md:text-lg text-sage-600 max-w-2xl mx-auto font-normal">
             Eliminate document hunting, data entry, and manual Schedule C reconciliations. Give your CPAs exception-based review briefs with 1-click workpaper audit trails.
           </p>
 
           <div className="flex items-center justify-center gap-4 pt-4">
             <button
               onClick={onSwitchToPro}
-              className="px-6 py-3.5 rounded-2xl font-bold text-sm bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-600/30 transition flex items-center gap-2"
+              className="px-6 py-3.5 rounded-2xl font-bold text-sm bg-lime-400 hover:bg-lime-500 text-pine-900 shadow-md transition flex items-center gap-2"
             >
               <span>Explore CPA Review Cockpit</span>
               <ArrowRight className="w-4 h-4" />
@@ -175,31 +175,31 @@ export function MarketingLandingView({ onStartFiling, onOpenOnboarding, onSwitch
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto pt-6 text-left">
-            <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-              <div className="text-xl font-bold text-white">10x</div>
-              <div className="text-xs text-slate-400 mt-1">Review Capacity Per Preparer</div>
+            <div className="bg-white border border-sage-300 p-4 rounded-2xl shadow-sm">
+              <div className="text-xl font-bold text-sage-950">10x</div>
+              <div className="text-xs text-sage-600 mt-1 font-medium">Review Capacity Per Preparer</div>
             </div>
-            <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-              <div className="text-xl font-bold text-emerald-400">&le; 3</div>
-              <div className="text-xs text-slate-400 mt-1">Avg Questions to File (QtF)</div>
+            <div className="bg-white border border-sage-300 p-4 rounded-2xl shadow-sm">
+              <div className="text-xl font-bold text-emerald-600">&le; 3</div>
+              <div className="text-xs text-sage-600 mt-1 font-medium">Avg Questions to File (QtF)</div>
             </div>
-            <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-              <div className="text-xl font-bold text-indigo-300">100%</div>
-              <div className="text-xs text-slate-400 mt-1">Provable Workpaper Lineage</div>
+            <div className="bg-white border border-sage-300 p-4 rounded-2xl shadow-sm">
+              <div className="text-xl font-bold text-pine-800">100%</div>
+              <div className="text-xs text-sage-600 mt-1 font-medium">Provable Workpaper Lineage</div>
             </div>
-            <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-              <div className="text-xl font-bold text-purple-300">5 States</div>
-              <div className="text-xs text-slate-400 mt-1">Sovereign Law Coverage</div>
+            <div className="bg-white border border-sage-300 p-4 rounded-2xl shadow-sm">
+              <div className="text-xl font-bold text-pine-800">5 States</div>
+              <div className="text-xs text-sage-600 mt-1 font-medium">Sovereign Law Coverage</div>
             </div>
           </div>
         </div>
       )}
 
       {/* COMPARISON MATRIX: Traditional Software vs. Autonomous Tax OS */}
-      <div className="max-w-5xl mx-auto bg-slate-900/90 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl">
+      <div className="max-w-5xl mx-auto bg-white border border-sage-300 rounded-3xl p-6 md:p-8 shadow-sm">
         <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold text-white">Why Autonomous Tax OS Changes Everything</h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <h2 className="text-2xl font-bold text-sage-950">Why Autonomous Tax OS Changes Everything</h2>
+          <p className="text-xs text-sage-600 mt-1 font-medium">
             Compare the outdated interview questionnaire experience against autonomous intelligence.
           </p>
         </div>
@@ -207,27 +207,27 @@ export function MarketingLandingView({ onStartFiling, onOpenOnboarding, onSwitch
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-slate-800 text-slate-400 font-semibold">
+              <tr className="border-b border-sage-200 text-sage-600 font-semibold">
                 <th className="py-4 px-4 w-1/3">Capability</th>
-                <th className="py-4 px-4 w-1/3 text-rose-400 bg-rose-950/20 rounded-t-xl">
+                <th className="py-4 px-4 w-1/3 text-rose-700 bg-rose-50/60 rounded-t-2xl font-bold">
                   Traditional Tax Software (TurboTax / TaxAct)
                 </th>
-                <th className="py-4 px-4 w-1/3 text-blue-400 bg-blue-950/30 rounded-t-xl">
+                <th className="py-4 px-4 w-1/3 text-pine-900 bg-sage-100/70 rounded-t-2xl font-bold">
                   Autonomous Tax OS
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 text-slate-300">
+            <tbody className="divide-y divide-sage-200 text-sage-700">
               <tr>
-                <td className="py-4 px-4 font-semibold text-white">User Interaction Model</td>
-                <td className="py-4 px-4 text-slate-400 bg-rose-950/10">
-                  <div className="flex items-center gap-1.5 text-rose-300 font-medium">
-                    <XCircle className="w-4 h-4 shrink-0" />
+                <td className="py-4 px-4 font-semibold text-sage-950">User Interaction Model</td>
+                <td className="py-4 px-4 text-rose-800 bg-rose-50/30">
+                  <div className="flex items-center gap-1.5 font-medium">
+                    <XCircle className="w-4 h-4 shrink-0 text-rose-600" />
                     <span>50+ screen questionnaire wizard (“Step 28”)</span>
                   </div>
                 </td>
-                <td className="py-4 px-4 bg-blue-950/20 font-medium text-white">
-                  <div className="flex items-center gap-1.5 text-emerald-400">
+                <td className="py-4 px-4 bg-sage-50/60 font-semibold text-pine-950">
+                  <div className="flex items-center gap-1.5 text-emerald-700 font-bold">
                     <CheckCircle2 className="w-4 h-4 shrink-0" />
                     <span>Zero forms; TaxDrop + Tax Inbox exception cards</span>
                   </div>
@@ -235,41 +235,41 @@ export function MarketingLandingView({ onStartFiling, onOpenOnboarding, onSwitch
               </tr>
 
               <tr>
-                <td className="py-4 px-4 font-semibold text-white">Questions Required to File</td>
-                <td className="py-4 px-4 text-slate-400 bg-rose-950/10">
+                <td className="py-4 px-4 font-semibold text-sage-950">Questions Required to File</td>
+                <td className="py-4 px-4 text-sage-600 bg-rose-50/30">
                   <span>35 to 80 interrogative screens</span>
                 </td>
-                <td className="py-4 px-4 bg-blue-950/20 font-semibold text-emerald-400">
+                <td className="py-4 px-4 bg-sage-50/60 font-bold text-emerald-700">
                   <span>Average &le; 3 questions (QtF = 1.20)</span>
                 </td>
               </tr>
 
               <tr>
-                <td className="py-4 px-4 font-semibold text-white">Math & Calculation Integrity</td>
-                <td className="py-4 px-4 text-slate-400 bg-rose-950/10">
+                <td className="py-4 px-4 font-semibold text-sage-950">Math & Calculation Integrity</td>
+                <td className="py-4 px-4 text-sage-600 bg-rose-50/30">
                   <span>Black-box engine with zero click-through explanations</span>
                 </td>
-                <td className="py-4 px-4 bg-blue-950/20 font-semibold text-blue-300">
+                <td className="py-4 px-4 bg-sage-50/60 font-bold text-pine-800">
                   <span>“Prove This Number” cryptographic DAG provenance</span>
                 </td>
               </tr>
 
               <tr>
-                <td className="py-4 px-4 font-semibold text-white">Multi-Jurisdiction Sourcing</td>
-                <td className="py-4 px-4 text-slate-400 bg-rose-950/10">
+                <td className="py-4 px-4 font-semibold text-sage-950">Multi-Jurisdiction Sourcing</td>
+                <td className="py-4 px-4 text-sage-600 bg-rose-50/30">
                   <span>Manual user apportionment entry with frequent double-tax</span>
                 </td>
-                <td className="py-4 px-4 bg-blue-950/20 font-semibold text-indigo-300">
+                <td className="py-4 px-4 bg-sage-50/60 font-bold text-pine-800">
                   <span>Automated nexus detection & sovereign 5-state packs</span>
                 </td>
               </tr>
 
               <tr>
-                <td className="py-4 px-4 font-semibold text-white">Professional Review</td>
-                <td className="py-4 px-4 text-slate-400 bg-rose-950/10">
+                <td className="py-4 px-4 font-semibold text-sage-950">Professional Review</td>
+                <td className="py-4 px-4 text-sage-600 bg-rose-50/30">
                   <span>Expensive $250+ add-on duplicate screen share</span>
                 </td>
-                <td className="py-4 px-4 bg-blue-950/20 font-semibold text-purple-300">
+                <td className="py-4 px-4 bg-sage-50/60 font-bold text-pine-800">
                   <span>Native EA/CPA exception review briefs & PTIN e-file</span>
                 </td>
               </tr>

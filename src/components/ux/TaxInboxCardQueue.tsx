@@ -73,43 +73,43 @@ export function TaxInboxCardQueue({ onItemResolved, questionsRemaining }: TaxInb
   const activeItems = items.filter(i => !i.resolved);
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm">
+    <div className="bg-white border border-sage-300 rounded-3xl p-6 shadow-xs">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
-            <Inbox className="w-5 h-5" />
+          <div className="p-2.5 rounded-2xl bg-lime-400/30 text-pine-800 border border-lime-400/50">
+            <Inbox className="w-5 h-5 text-pine-700" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold text-slate-100">
+              <h3 className="text-sm font-bold text-sage-900">
                 Tax Inbox — Questions to File
               </h3>
-              <span className="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30">
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-pine-700 text-lime-300">
                 {activeItems.length} Remaining
               </span>
             </div>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-sage-500">
               Replaces the 80-question tax wizard. Only high-leverage unresolved tax facts are presented.
             </p>
           </div>
         </div>
 
-        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-950 border border-slate-800 text-xs">
-          <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-          <span className="text-slate-400">Questions to File target:</span>
-          <span className="font-bold text-emerald-400 font-mono">≤ 3 items</span>
+        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-2xl bg-sage-100 border border-sage-300 text-xs">
+          <Sparkles className="w-3.5 h-3.5 text-pine-700" />
+          <span className="text-sage-600">QtF Target:</span>
+          <span className="font-bold text-pine-800 font-mono">≤ 3 items</span>
         </div>
       </div>
 
       {/* Cards Queue */}
       {activeItems.length === 0 ? (
-        <div className="p-8 text-center border border-dashed border-emerald-500/30 rounded-xl bg-emerald-500/5">
-          <div className="w-10 h-10 mx-auto rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-2">
+        <div className="p-8 text-center border border-dashed border-pine-600/30 rounded-2xl bg-sage-50">
+          <div className="w-10 h-10 mx-auto rounded-full bg-lime-400/40 text-pine-800 flex items-center justify-center mb-2">
             <Check className="w-5 h-5" />
           </div>
-          <h4 className="text-sm font-bold text-emerald-300">All Tax Inbox Items Resolved!</h4>
-          <p className="text-xs text-slate-400 mt-1">
+          <h4 className="text-sm font-bold text-pine-900">All Tax Inbox Items Resolved!</h4>
+          <p className="text-xs text-sage-600 mt-1">
             Questions to File is now 0. Your tax positions have 100% factual grounding and deterministic lineage.
           </p>
         </div>
@@ -121,27 +121,27 @@ export function TaxInboxCardQueue({ onItemResolved, questionsRemaining }: TaxInb
             return (
               <div 
                 key={item.id} 
-                className="p-5 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition space-y-4"
+                className="p-5 rounded-2xl bg-sage-50 border border-sage-200 hover:border-sage-300 transition space-y-4 shadow-2xs"
               >
                 {/* Card Title & Meta */}
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    {item.category === 'BUSINESS_TRAVEL' && <Plane className="w-4 h-4 text-blue-400" />}
-                    {item.category === 'HOME_OFFICE' && <Home className="w-4 h-4 text-purple-400" />}
-                    {item.category === 'MISSING_1099B' && <TrendingUp className="w-4 h-4 text-amber-400" />}
-                    <h4 className="text-sm font-semibold text-slate-200">{item.title}</h4>
+                    {item.category === 'BUSINESS_TRAVEL' && <Plane className="w-4 h-4 text-pine-700" />}
+                    {item.category === 'HOME_OFFICE' && <Home className="w-4 h-4 text-pine-700" />}
+                    {item.category === 'MISSING_1099B' && <TrendingUp className="w-4 h-4 text-amber-700" />}
+                    <h4 className="text-sm font-bold text-sage-900">{item.title}</h4>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] px-2 py-0.5 rounded font-mono bg-blue-500/10 text-blue-300 border border-blue-500/20">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-mono bg-white text-sage-700 border border-sage-300">
                       {item.statutoryBasis}
                     </span>
-                    <span className="text-[11px] font-mono text-emerald-400 font-medium">
+                    <span className="text-[11px] font-mono text-pine-800 font-bold">
                       {item.impactPreview}
                     </span>
                   </div>
                 </div>
 
-                <p className="text-xs text-slate-400 leading-relaxed">
+                <p className="text-xs text-sage-600 leading-relaxed">
                   {item.description}
                 </p>
 
@@ -150,19 +150,19 @@ export function TaxInboxCardQueue({ onItemResolved, questionsRemaining }: TaxInb
                   <div className="flex flex-wrap items-center gap-2 pt-1">
                     <button
                       onClick={() => handleResolve(item.id, 'YES_100_BUSINESS')}
-                      className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition shadow-sm"
+                      className="px-3.5 py-2 rounded-2xl bg-lime-400 hover:bg-lime-500 text-pine-900 text-xs font-bold transition shadow-xs"
                     >
                       ✓ Yes, 100% Business Travel
                     </button>
                     <button
                       onClick={() => handleResolve(item.id, 'NO_PERSONAL')}
-                      className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition"
+                      className="px-3.5 py-2 rounded-2xl bg-white hover:bg-sage-100 text-sage-800 border border-sage-300 text-xs font-semibold transition"
                     >
                       Personal Trip (Disallow)
                     </button>
                     <button
                       onClick={() => handleResolve(item.id, 'MIXED_50_50')}
-                      className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition"
+                      className="px-3.5 py-2 rounded-2xl bg-white hover:bg-sage-100 text-sage-800 border border-sage-300 text-xs font-semibold transition"
                     >
                       Mixed Purpose (50%)
                     </button>
@@ -173,24 +173,24 @@ export function TaxInboxCardQueue({ onItemResolved, questionsRemaining }: TaxInb
                   <div className="space-y-3 pt-1">
                     <div className="flex flex-wrap items-center gap-4 text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="text-slate-400">Office Area:</span>
+                        <span className="text-sage-600 font-medium">Office Area:</span>
                         <input
                           type="number"
                           value={homeOfficeSqFt}
                           onChange={(e) => setHomeOfficeSqFt(e.target.value)}
-                          className="w-16 px-2 py-1 bg-slate-900 border border-slate-700 rounded text-center text-slate-100 font-mono text-xs focus:outline-none focus:border-blue-500"
+                          className="w-16 px-2 py-1 bg-white border border-sage-300 rounded-xl text-center text-sage-900 font-mono text-xs focus:outline-none focus:border-pine-600"
                         />
-                        <span className="text-slate-400">sq ft (max 300)</span>
+                        <span className="text-sage-500">sq ft (max 300)</span>
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <label className="flex items-center gap-1.5 cursor-pointer text-slate-300">
+                        <label className="flex items-center gap-1.5 cursor-pointer text-sage-700">
                           <input
                             type="radio"
                             name="method"
                             checked={homeOfficeMethod === 'SIMPLIFIED'}
                             onChange={() => setHomeOfficeMethod('SIMPLIFIED')}
-                            className="accent-blue-500"
+                            className="accent-pine-700"
                           />
                           <span>Simplified ($5/sq ft = $1,100)</span>
                         </label>
@@ -200,13 +200,13 @@ export function TaxInboxCardQueue({ onItemResolved, questionsRemaining }: TaxInb
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleResolve(item.id, `HOME_OFFICE_${homeOfficeSqFt}SQFT`)}
-                        className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition"
+                        className="px-3.5 py-2 rounded-2xl bg-lime-400 hover:bg-lime-500 text-pine-900 text-xs font-bold transition shadow-xs"
                       >
                         ✓ Claim $1,100 Simplified Deduction
                       </button>
                       <button
                         onClick={() => handleResolve(item.id, 'DECLINE_HOME_OFFICE')}
-                        className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition"
+                        className="px-3.5 py-2 rounded-2xl bg-white hover:bg-sage-100 text-sage-800 border border-sage-300 text-xs font-semibold transition"
                       >
                         Do Not Claim
                       </button>
@@ -218,19 +218,19 @@ export function TaxInboxCardQueue({ onItemResolved, questionsRemaining }: TaxInb
                   <div className="flex flex-wrap items-center gap-2 pt-1">
                     <button
                       onClick={() => handleResolve(item.id, 'CONNECT_COINBASE_API')}
-                      className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition"
+                      className="px-3.5 py-2 rounded-2xl bg-lime-400 hover:bg-lime-500 text-pine-900 text-xs font-bold transition shadow-xs"
                     >
                       Connect Brokerage API
                     </button>
                     <button
                       onClick={() => handleResolve(item.id, 'ZERO_NET_GAIN')}
-                      className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition"
+                      className="px-3.5 py-2 rounded-2xl bg-white hover:bg-sage-100 text-sage-800 border border-sage-300 text-xs font-semibold transition"
                     >
                       Cost Basis Equal to Proceeds ($0 Net Gain)
                     </button>
                     <button
                       onClick={() => handleResolve(item.id, 'UPLOAD_CSV')}
-                      className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition"
+                      className="px-3.5 py-2 rounded-2xl bg-white hover:bg-sage-100 text-sage-800 border border-sage-300 text-xs font-semibold transition"
                     >
                       Upload CSV Statement
                     </button>

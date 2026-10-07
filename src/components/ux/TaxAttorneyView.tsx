@@ -125,33 +125,33 @@ export function TaxAttorneyView() {
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-4">
+      <div className="p-6 rounded-3xl bg-white border border-sage-300 shadow-sm flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
+          <div className="p-2.5 rounded-2xl bg-pine-100 text-pine-800 border border-pine-200">
             <Scale className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
+            <h2 className="text-base font-bold text-sage-900 flex items-center gap-2">
               Tax Controversy & Legal Counsel Workspace
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-purple-500/10 text-purple-400 border border-purple-500/30 flex items-center gap-1">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-pine-100 text-pine-800 border border-pine-200 flex items-center gap-1">
                 <Lock className="w-3 h-3" />
                 <span>Privileged & Confidential</span>
               </span>
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-sage-600 mt-0.5">
               Restricted to escalated legal controversies, statutory clashes, and IRS/state notice defenses.
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-3 text-xs">
-          <div className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-center">
-            <span className="text-slate-400 block text-[10px] uppercase">Active Matters</span>
-            <span className="font-bold text-purple-300 font-mono">{matters.length} Matters</span>
+          <div className="px-3.5 py-2 rounded-2xl bg-sage-50 border border-sage-200 text-center">
+            <span className="text-sage-500 block text-[10px] uppercase font-bold">Active Matters</span>
+            <span className="font-extrabold text-sage-900 font-mono">{matters.length} Matters</span>
           </div>
-          <div className="px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-center">
-            <span className="text-rose-400 block text-[10px] uppercase">Controversy Exposure</span>
-            <span className="font-bold text-rose-300 font-mono">$17,650</span>
+          <div className="px-3.5 py-2 rounded-2xl bg-rose-50 border border-rose-200 text-center">
+            <span className="text-rose-700 block text-[10px] uppercase font-bold">Controversy Exposure</span>
+            <span className="font-extrabold text-rose-800 font-mono">$17,650</span>
           </div>
         </div>
       </div>
@@ -159,7 +159,7 @@ export function TaxAttorneyView() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Legal Matters Queue */}
         <div className="lg:col-span-4 space-y-3">
-          <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-1">
+          <div className="text-xs font-semibold text-sage-600 uppercase tracking-wider px-1">
             Escalated Legal Controversy Matters
           </div>
 
@@ -168,36 +168,36 @@ export function TaxAttorneyView() {
               <div
                 key={m.id}
                 onClick={() => setSelectedMatterId(m.id)}
-                className={`p-4 rounded-xl border transition cursor-pointer ${
+                className={`p-4 rounded-2xl border transition cursor-pointer ${
                   selectedMatterId === m.id
-                    ? 'bg-slate-900 border-purple-500/50 shadow-md ring-1 ring-purple-500/20'
-                    : 'bg-slate-950/70 border-slate-800 hover:border-slate-700 hover:bg-slate-900/40'
+                    ? 'bg-pine-50 border-pine-600 shadow-xs ring-1 ring-pine-600'
+                    : 'bg-white border-sage-200 hover:border-sage-300 hover:bg-sage-50/50'
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-mono text-purple-400 font-bold">{m.caseRef}</span>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                  <span className="text-[10px] font-mono text-pine-800 font-bold">{m.caseRef}</span>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
                     ${m.exposureAmount.toLocaleString()} Exposure
                   </span>
                 </div>
 
-                <div className="font-bold text-xs text-slate-200 mb-1.5">{m.title}</div>
-                <div className="text-[11px] text-slate-400 line-clamp-2 mb-3">{m.clientName}</div>
+                <div className="font-bold text-xs text-sage-900 mb-1.5">{m.title}</div>
+                <div className="text-[11px] text-sage-600 line-clamp-2 mb-3">{m.clientName}</div>
 
-                <div className="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-800/80">
+                <div className="flex items-center justify-between text-[11px] text-sage-500 pt-2 border-t border-sage-200">
                   <div className="flex items-center gap-1">
                     {m.jurisdictions.map(j => (
-                      <span key={j} className="px-1 py-0.2 rounded text-[9px] font-mono bg-slate-800 text-slate-300">
+                      <span key={j} className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-sage-100 text-sage-700 font-semibold">
                         {j}
                       </span>
                     ))}
                   </div>
                   {sealedMatters[m.id] ? (
-                    <span className="text-emerald-400 font-semibold flex items-center gap-1 text-[10px]">
-                      <Award className="w-3 h-3" /> Sealed
+                    <span className="text-pine-800 font-bold flex items-center gap-1 text-[10px]">
+                      <Award className="w-3.5 h-3.5 text-pine-700" /> Sealed
                     </span>
                   ) : (
-                    <span className="text-purple-400 font-medium">Review Legal Brief</span>
+                    <span className="text-pine-800 font-bold text-[10px]">Review Legal Brief</span>
                   )}
                 </div>
               </div>
@@ -207,38 +207,38 @@ export function TaxAttorneyView() {
 
         {/* Right Column: Detailed Matter Analysis & Workpapers */}
         <div className="lg:col-span-8 space-y-6">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-800">
+          <div className="bg-white border border-sage-300 rounded-3xl p-6 shadow-sm space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-sage-200">
               <div>
-                <span className="text-[10px] font-mono text-purple-400 uppercase tracking-wider block font-bold">
+                <span className="text-[10px] font-mono text-pine-800 uppercase tracking-wider block font-bold">
                   {currentMatter.caseRef} • {currentMatter.clientName}
                 </span>
-                <h3 className="text-lg font-bold text-slate-100 mt-0.5">
+                <h3 className="text-lg font-bold text-sage-900 mt-0.5">
                   {currentMatter.title}
                 </h3>
               </div>
 
-              <div className="flex items-center gap-2 bg-slate-950 p-1 rounded-xl border border-slate-800">
+              <div className="flex items-center gap-1.5 bg-sage-100 p-1 rounded-2xl border border-sage-200">
                 <button
                   onClick={() => setActiveTab('ANALYSIS')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                    activeTab === 'ANALYSIS' ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                    activeTab === 'ANALYSIS' ? 'bg-pine-700 text-white shadow-xs' : 'text-sage-700 hover:text-sage-900'
                   }`}
                 >
                   Statutory Clash
                 </button>
                 <button
                   onClick={() => setActiveTab('WORKPAPERS')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                    activeTab === 'WORKPAPERS' ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                    activeTab === 'WORKPAPERS' ? 'bg-pine-700 text-white shadow-xs' : 'text-sage-700 hover:text-sage-900'
                   }`}
                 >
                   Privileged Notes ({currentMatter.workpapers.length})
                 </button>
                 <button
                   onClick={() => setActiveTab('MEMO')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                    activeTab === 'MEMO' ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                    activeTab === 'MEMO' ? 'bg-pine-700 text-white shadow-xs' : 'text-sage-700 hover:text-sage-900'
                   }`}
                 >
                   Form 8275 Memo
@@ -247,12 +247,12 @@ export function TaxAttorneyView() {
             </div>
 
             {/* Core Legal Issue */}
-            <div className="p-4 rounded-xl bg-purple-500/5 border border-purple-500/20 space-y-2">
-              <div className="text-xs font-semibold text-purple-300 uppercase tracking-wider flex items-center gap-1.5">
+            <div className="p-4 rounded-2xl bg-pine-50 border border-pine-200 space-y-2">
+              <div className="text-xs font-bold text-pine-800 uppercase tracking-wider flex items-center gap-1.5">
                 <BookOpen className="w-4 h-4" />
                 <span>Primary Legal Controversy Question</span>
               </div>
-              <p className="text-sm text-slate-200 leading-relaxed font-serif italic">
+              <p className="text-sm text-sage-900 leading-relaxed font-serif italic">
                 "{currentMatter.legalQuestion}"
               </p>
             </div>
@@ -260,51 +260,51 @@ export function TaxAttorneyView() {
             {/* Statutory Clash Grid */}
             {activeTab === 'ANALYSIS' && (
               <div className="space-y-4">
-                <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                <h4 className="text-xs font-semibold text-sage-600 uppercase tracking-wider">
                   Conflicting Sovereign Legal Standards
                 </h4>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {currentMatter.clashingAuthorities.map((auth, idx) => (
-                    <div key={idx} className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                    <div key={idx} className="p-4 rounded-2xl bg-sage-50 border border-sage-200 space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="font-mono text-xs font-bold text-slate-200">{auth.citation}</span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-300">
+                        <span className="font-mono text-xs font-bold text-sage-900">{auth.citation}</span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-sage-200 text-sage-800 font-semibold">
                           {auth.jurisdiction}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-400 leading-relaxed">
+                      <p className="text-xs text-sage-600 leading-relaxed">
                         {auth.description}
                       </p>
                     </div>
                   ))}
                 </div>
 
-                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-                  <div className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+                <div className="p-4 rounded-2xl bg-sage-50 border border-sage-200 space-y-2">
+                  <div className="text-xs font-bold text-sage-900 flex items-center justify-between">
                     <span>Attorney Legal Assessment & Strategy</span>
-                    <span className="text-[10px] text-purple-400 font-mono">Privileged Work Product</span>
+                    <span className="text-[10px] text-pine-800 font-mono font-bold">Privileged Work Product</span>
                   </div>
                   <textarea
                     value={currentAssessment}
                     onChange={(e) => setAssessments(prev => ({ ...prev, [currentMatter.id]: e.target.value }))}
                     rows={4}
-                    className="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 leading-relaxed focus:outline-none focus:border-purple-500 font-sans"
+                    className="w-full p-3 bg-white border border-sage-300 rounded-xl text-xs text-sage-900 leading-relaxed focus:outline-none focus:border-pine-700 font-sans font-medium"
                   />
                 </div>
               </div>
             )}
 
             {activeTab === 'WORKPAPERS' && (
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-                <div className="flex items-center gap-2 text-purple-400 text-xs font-bold uppercase tracking-wider">
+              <div className="p-4 rounded-2xl bg-sage-50 border border-sage-200 space-y-3">
+                <div className="flex items-center gap-2 text-pine-800 text-xs font-bold uppercase tracking-wider">
                   <Lock className="w-4 h-4" />
                   <span>Attorney-Client Privileged Workpapers</span>
                 </div>
-                <p className="text-xs text-slate-400 leading-relaxed">
+                <p className="text-xs text-sage-600 leading-relaxed">
                   These records are protected under Federal Rule of Evidence 502 and state professional conduct rules. They are excluded from standard preparer exports and IRS e-file staging schemas.
                 </p>
-                <div className="p-3 bg-slate-900 rounded-lg border border-slate-800 font-mono text-xs text-slate-300 space-y-1.5">
+                <div className="p-3 bg-white rounded-xl border border-sage-200 font-mono text-xs text-sage-800 space-y-1.5 font-semibold">
                   {currentMatter.workpapers.map((wp, idx) => (
                     <div key={idx}>{wp}</div>
                   ))}
@@ -313,27 +313,27 @@ export function TaxAttorneyView() {
             )}
 
             {activeTab === 'MEMO' && (
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+              <div className="p-4 rounded-2xl bg-sage-50 border border-sage-200 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-200">Form 8275 / State Protest Defense Memo</span>
+                  <span className="text-xs font-bold text-sage-900">Form 8275 / State Protest Defense Memo</span>
                   <button 
                     onClick={handleDownloadMemo}
-                    className="flex items-center gap-1.5 text-xs text-purple-400 hover:text-purple-300 hover:underline px-2.5 py-1 rounded bg-slate-900 border border-slate-800 transition"
+                    className="flex items-center gap-1.5 text-xs text-sage-800 font-semibold hover:bg-sage-100 px-3 py-1.5 rounded-xl bg-white border border-sage-300 transition"
                   >
-                    <Download className="w-3.5 h-3.5" /> 
+                    <Download className="w-3.5 h-3.5 text-pine-700" /> 
                     <span>Download Formal Memo (.txt)</span>
                   </button>
                 </div>
-                <div className="p-4 bg-slate-900 rounded-lg border border-slate-800 font-mono text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">
+                <div className="p-4 bg-white rounded-xl border border-sage-200 font-mono text-xs text-sage-900 leading-relaxed whitespace-pre-wrap font-medium">
                   {currentMatter.memoDraft}
                 </div>
               </div>
             )}
 
             {/* Bottom Actions */}
-            <div className="pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
-              <div className="text-slate-400 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <div className="pt-4 border-t border-sage-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="text-sage-600 flex items-center gap-1.5 font-medium">
+                <span className="w-2 h-2 rounded-full bg-lime-500"></span>
                 <span>Jurisdictional Legal Review Complete</span>
               </div>
 
@@ -341,10 +341,10 @@ export function TaxAttorneyView() {
                 <button
                   onClick={handleSealMemo}
                   disabled={isMatterSealed}
-                  className={`px-4 py-2 rounded-xl font-bold transition flex items-center gap-1.5 ${
+                  className={`px-4 py-2 rounded-2xl font-bold transition flex items-center gap-1.5 ${
                     isMatterSealed
-                      ? 'bg-emerald-600 text-white cursor-default shadow-md shadow-emerald-500/20'
-                      : 'bg-purple-600 hover:bg-purple-500 text-white'
+                      ? 'bg-pine-700 text-white cursor-default shadow-xs'
+                      : 'bg-lime-400 hover:bg-lime-500 text-pine-900 shadow-xs'
                   }`}
                 >
                   <Check className="w-4 h-4" />

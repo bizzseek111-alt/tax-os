@@ -254,33 +254,33 @@ export function CustomerSupportView() {
   return (
     <div className="space-y-6">
       {/* Top Header */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white border border-sage-300 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center gap-1.5">
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-pine-100 text-pine-800 border border-pine-200 flex items-center gap-1.5">
               <Headphones className="w-3.5 h-3.5" />
               Support Operations Cockpit
             </span>
-            <span className="text-xs text-amber-400 font-medium flex items-center gap-1">
-              <Lock className="w-3 h-3" /> Default PII Masking Active
+            <span className="text-xs text-pine-800 font-semibold flex items-center gap-1">
+              <Lock className="w-3 h-3 text-pine-700" /> Default PII Masking Active
             </span>
           </div>
-          <h1 className="text-2xl font-bold text-white mt-2">Customer Support & Escalations</h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <h1 className="text-2xl font-bold text-sage-900 mt-2">Customer Support & Escalations</h1>
+          <p className="text-sm text-sage-600 mt-1">
             Role-gated tier support with strict privacy boundary enforcement and seamless CPA escalation.
           </p>
         </div>
 
         {/* Quick Category Summary Badges */}
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="px-2.5 py-1 rounded-lg text-xs bg-slate-800 text-slate-300 border border-slate-700">
-            Open: <strong className="text-white">3</strong>
+          <span className="px-3 py-1.5 rounded-xl text-xs bg-sage-50 text-sage-700 border border-sage-200 font-medium">
+            Open: <strong className="text-sage-900 font-bold">3</strong>
           </span>
-          <span className="px-2.5 py-1 rounded-lg text-xs bg-rose-950/60 text-rose-300 border border-rose-800/40">
-            Critical: <strong className="text-rose-200">2</strong>
+          <span className="px-3 py-1.5 rounded-xl text-xs bg-rose-50 text-rose-800 border border-rose-200 font-medium">
+            Critical: <strong className="text-rose-900 font-bold">2</strong>
           </span>
-          <span className="px-2.5 py-1 rounded-lg text-xs bg-emerald-950/60 text-emerald-300 border border-emerald-800/40">
-            Resolved (24h): <strong className="text-emerald-200">14</strong>
+          <span className="px-3 py-1.5 rounded-xl text-xs bg-lime-100 text-pine-900 border border-lime-300 font-medium">
+            Resolved (24h): <strong className="text-pine-950 font-bold">14</strong>
           </span>
         </div>
       </div>
@@ -291,15 +291,15 @@ export function CustomerSupportView() {
         {/* Left Column: Tickets Queue (5 cols) */}
         <div className="lg:col-span-5 space-y-4">
           {/* Search & Filter Bar */}
-          <div className="bg-slate-900/80 border border-slate-800 p-3 rounded-2xl space-y-3">
+          <div className="bg-white border border-sage-300 p-3.5 rounded-3xl space-y-3 shadow-sm">
             <div className="relative">
-              <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+              <Search className="w-4 h-4 text-sage-500 absolute left-3 top-3" />
               <input
                 type="text"
                 placeholder="Search ticket, client, or ID..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                className="w-full bg-sage-50 border border-sage-200 rounded-xl pl-9 pr-3 py-2 text-xs text-sage-900 placeholder-sage-500 focus:outline-none focus:border-pine-700"
               />
             </div>
 
@@ -309,10 +309,10 @@ export function CustomerSupportView() {
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-2.5 py-1 rounded-lg font-medium transition whitespace-nowrap text-[11px] ${
+                  className={`px-3 py-1 rounded-xl font-bold transition whitespace-nowrap text-[11px] ${
                     selectedCategory === cat
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                      ? 'bg-pine-700 text-white shadow-xs'
+                      : 'bg-sage-50 text-sage-700 hover:bg-sage-100 border border-sage-200'
                   }`}
                 >
                   {cat === 'ALL' ? 'All' : cat.replace('_', ' ')}
@@ -331,36 +331,36 @@ export function CustomerSupportView() {
                   onClick={() => setSelectedTicketId(t.id)}
                   className={`p-4 rounded-2xl border cursor-pointer transition ${
                     isSelected
-                      ? 'bg-slate-800/90 border-blue-500 ring-1 ring-blue-500/50 shadow-md'
-                      : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'
+                      ? 'bg-pine-50 border-pine-600 ring-1 ring-pine-600 shadow-xs'
+                      : 'bg-white border-sage-200 hover:border-sage-300 hover:bg-sage-50/50'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-semibold text-blue-400">{t.id}</span>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                      t.priority === 'CRITICAL' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' :
-                      t.priority === 'HIGH' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
-                      'bg-slate-800 text-slate-400'
+                    <span className="font-mono text-xs font-bold text-pine-800">{t.id}</span>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                      t.priority === 'CRITICAL' ? 'bg-rose-100 text-rose-800 border border-rose-200' :
+                      t.priority === 'HIGH' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
+                      'bg-sage-100 text-sage-700'
                     }`}>
                       {t.priority}
                     </span>
                   </div>
 
-                  <h4 className="text-xs font-semibold text-white mt-1.5 line-clamp-1">{t.title}</h4>
+                  <h4 className="text-xs font-bold text-sage-900 mt-1.5 line-clamp-1">{t.title}</h4>
 
-                  <div className="flex items-center justify-between text-[11px] text-slate-400 mt-2">
-                    <span className="flex items-center gap-1">
-                      <User className="w-3 h-3 text-slate-500" />
+                  <div className="flex items-center justify-between text-[11px] text-sage-600 mt-2">
+                    <span className="flex items-center gap-1 font-medium">
+                      <User className="w-3 h-3 text-sage-500" />
                       {t.clientName}
                     </span>
-                    <span className="text-slate-500">{t.createdAt}</span>
+                    <span className="text-sage-500">{t.createdAt}</span>
                   </div>
 
-                  <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-800/60">
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-slate-950 text-slate-400 border border-slate-800">
+                  <div className="flex items-center gap-2 mt-2 pt-2 border-t border-sage-200">
+                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-sage-50 text-sage-700 border border-sage-200 font-semibold">
                       {t.category}
                     </span>
-                    <span className="text-[10px] text-slate-500 truncate">
+                    <span className="text-[10px] text-sage-500 truncate">
                       Assigned: {t.assignedTo}
                     </span>
                   </div>
@@ -371,44 +371,44 @@ export function CustomerSupportView() {
         </div>
 
         {/* Right Column: Ticket Detail Workspace (7 cols) */}
-        <div className="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between shadow-xl">
+        <div className="lg:col-span-7 bg-white border border-sage-300 rounded-3xl p-6 flex flex-col justify-between shadow-sm space-y-6">
           <div className="space-y-6">
             
             {/* Header info */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-sage-200">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold text-blue-400">{selectedTicket.id}</span>
-                  <span className="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300 border border-slate-700">
+                  <span className="text-xs font-mono font-bold text-pine-800">{selectedTicket.id}</span>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] bg-sage-100 text-sage-700 font-semibold border border-sage-200">
                     {selectedTicket.status}
                   </span>
-                  <span className="text-xs text-slate-400">Tax Year: {selectedTicket.taxYear}</span>
+                  <span className="text-xs text-sage-600 font-medium">Tax Year: {selectedTicket.taxYear}</span>
                 </div>
-                <h2 className="text-lg font-bold text-white mt-1">{selectedTicket.title}</h2>
+                <h2 className="text-lg font-bold text-sage-900 mt-1">{selectedTicket.title}</h2>
               </div>
 
               {/* Action Buttons */}
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleEscalateToCpa}
-                  className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-purple-600 hover:bg-purple-500 text-white transition flex items-center gap-1.5"
+                  className="px-4 py-2 rounded-2xl text-xs font-bold bg-white hover:bg-sage-100 text-sage-800 border border-sage-300 transition flex items-center gap-1.5 shadow-xs"
                 >
-                  <ArrowUpRight className="w-3.5 h-3.5" />
+                  <ArrowUpRight className="w-3.5 h-3.5 text-pine-700" />
                   <span>Escalate to CPA</span>
                 </button>
               </div>
             </div>
 
             {/* PII & Client Identity Box (Default Masked) */}
-            <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
+            <div className="bg-sage-50 border border-sage-200 rounded-2xl p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                  <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-xs font-bold text-sage-900 flex items-center gap-1.5">
+                  <ShieldAlert className="w-3.5 h-3.5 text-amber-700" />
                   Taxpayer Identity & PII Guard
                 </span>
                 <button
                   onClick={() => isCurrentUnmasked ? setIsPiiUnmasked(prev => ({ ...prev, [selectedTicket.id]: false })) : setShowUnmaskModal(true)}
-                  className="text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                  className="text-xs font-bold text-pine-800 hover:underline flex items-center gap-1"
                 >
                   {isCurrentUnmasked ? (
                     <>
@@ -424,22 +424,22 @@ export function CustomerSupportView() {
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                 <div>
-                  <span className="text-slate-500 text-[11px]">Client Name:</span>
-                  <div className="font-medium text-white">{selectedTicket.clientName}</div>
+                  <span className="text-sage-500 text-[11px] block">Client Name:</span>
+                  <div className="font-bold text-sage-900">{selectedTicket.clientName}</div>
                 </div>
                 <div>
-                  <span className="text-slate-500 text-[11px]">Email:</span>
-                  <div className="font-medium text-white truncate">{selectedTicket.clientEmail}</div>
+                  <span className="text-sage-500 text-[11px] block">Email:</span>
+                  <div className="font-bold text-sage-900 truncate">{selectedTicket.clientEmail}</div>
                 </div>
                 <div>
-                  <span className="text-slate-500 text-[11px]">SSN / ITIN:</span>
-                  <div className="font-mono text-white">
+                  <span className="text-sage-500 text-[11px] block">SSN / ITIN:</span>
+                  <div className="font-mono text-sage-900 font-bold">
                     {isCurrentUnmasked ? selectedTicket.rawSsn : selectedTicket.maskedSsn}
                   </div>
                 </div>
                 <div>
-                  <span className="text-slate-500 text-[11px]">Verified Income:</span>
-                  <div className="font-mono text-emerald-400">
+                  <span className="text-sage-500 text-[11px] block">Verified Income:</span>
+                  <div className="font-mono text-pine-800 font-extrabold">
                     {isCurrentUnmasked ? selectedTicket.rawIncome : selectedTicket.maskedIncome}
                   </div>
                 </div>
@@ -448,24 +448,24 @@ export function CustomerSupportView() {
 
             {/* Conversation Log */}
             <div className="space-y-3">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Communication History</span>
+              <span className="text-xs font-semibold text-sage-600 uppercase tracking-wider">Communication History</span>
               <div className="space-y-3 max-h-[260px] overflow-y-auto pr-2">
                 {selectedTicket.messages.map((m, idx) => (
                   <div
                     key={idx}
-                    className={`p-3 rounded-xl text-xs ${
+                    className={`p-3.5 rounded-2xl text-xs ${
                       m.sender === 'CLIENT'
-                        ? 'bg-slate-950 border border-slate-800 text-slate-200 mr-8'
+                        ? 'bg-sage-50 border border-sage-200 text-sage-900 mr-8'
                         : m.sender === 'SUPPORT'
-                        ? 'bg-blue-950/40 border border-blue-900/40 text-blue-100 ml-8'
-                        : 'bg-amber-950/30 border border-amber-900/30 text-amber-200 text-center text-[11px]'
+                        ? 'bg-pine-700 text-white ml-8 shadow-xs'
+                        : 'bg-amber-50 border border-amber-200 text-amber-900 text-center text-[11px] font-semibold'
                     }`}
                   >
-                    <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1">
+                    <div className="flex items-center justify-between text-[10px] opacity-80 mb-1">
                       <span className="font-bold">{m.sender}</span>
                       <span>{m.timestamp}</span>
                     </div>
-                    <div>{m.text}</div>
+                    <div className="leading-relaxed">{m.text}</div>
                   </div>
                 ))}
               </div>
@@ -474,29 +474,29 @@ export function CustomerSupportView() {
           </div>
 
           {/* Reply Form */}
-          <form onSubmit={handleSendReply} className="mt-4 pt-4 border-t border-slate-800 space-y-3">
+          <form onSubmit={handleSendReply} className="mt-4 pt-4 border-t border-sage-200 space-y-3">
             <div className="flex items-center gap-2">
               <input
                 type="text"
                 placeholder="Type response to taxpayer or add internal note..."
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
-                className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                className="flex-1 bg-sage-50 border border-sage-200 rounded-2xl px-4 py-2 text-xs text-sage-900 placeholder-sage-500 focus:outline-none focus:border-pine-700 font-medium"
               />
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition"
+                className="px-5 py-2 bg-lime-400 hover:bg-lime-500 text-pine-900 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition shadow-xs"
               >
                 <Send className="w-3.5 h-3.5" />
                 <span>Send</span>
               </button>
             </div>
-            <div className="flex items-center gap-2 text-[11px] text-slate-500">
+            <div className="flex items-center gap-2 text-[11px] text-sage-600 font-medium">
               <span>Quick macros:</span>
               <button
                 type="button"
                 onClick={() => setReplyText('Please upload your Form 1098 or 8829 supporting workpaper via TaxDrop.')}
-                className="hover:text-blue-400 underline"
+                className="hover:text-pine-800 underline font-semibold"
               >
                 Request Evidence
               </button>
@@ -504,7 +504,7 @@ export function CustomerSupportView() {
               <button
                 type="button"
                 onClick={() => setReplyText('Your tax case has been assigned to our licensed CPA pod for expedited review.')}
-                className="hover:text-blue-400 underline"
+                className="hover:text-pine-800 underline font-semibold"
               >
                 Assigned to CPA
               </button>
@@ -516,21 +516,21 @@ export function CustomerSupportView() {
 
       {/* Unmask Modal */}
       {showUnmaskModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center gap-2 text-amber-400">
-              <ShieldAlert className="w-5 h-5" />
-              <h3 className="text-base font-bold text-white">Privilege Escalation: Unmask PII</h3>
+        <div className="fixed inset-0 bg-pine-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-sage-300 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center gap-2 text-pine-800 font-bold">
+              <ShieldAlert className="w-5 h-5 text-amber-700" />
+              <h3 className="text-base font-bold text-sage-900">Privilege Escalation: Unmask PII</h3>
             </div>
-            <p className="text-xs text-slate-300">
+            <p className="text-xs text-sage-600 leading-relaxed">
               Under Section 7216 and zero-trust policies, accessing raw SSN/EIN or unmasked financials will record an immutable audit entry with your staff ID and timestamp.
             </p>
             <div>
-              <label className="text-xs font-semibold text-slate-300">Business Justification Reason Code:</label>
+              <label className="text-xs font-semibold text-sage-700">Business Justification Reason Code:</label>
               <select
                 value={unmaskReason}
                 onChange={(e) => setUnmaskReason(e.target.value)}
-                className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                className="w-full mt-1 bg-sage-50 border border-sage-300 rounded-xl px-3 py-2 text-xs text-sage-900 font-semibold"
               >
                 <option value="">Select reason...</option>
                 <option value="IRS_NOTICE_RECONCILIATION">IRS Notice / State Letter Reconciliation</option>
@@ -542,13 +542,13 @@ export function CustomerSupportView() {
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 onClick={() => setShowUnmaskModal(false)}
-                className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-sage-100 text-sage-800 hover:bg-sage-200"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmUnmask}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white"
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-lime-400 hover:bg-lime-500 text-pine-900 shadow-xs"
               >
                 Authorize & Unmask
               </button>

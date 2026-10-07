@@ -65,31 +65,31 @@ export function YearRoundPlanningView() {
   return (
     <div className="space-y-6">
       {/* Top Banner: Digital Tax Twin 2026 */}
-      <div className="bg-gradient-to-r from-blue-950/60 via-indigo-950/40 to-slate-900 border border-blue-900/40 rounded-2xl p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-pine-700 text-white rounded-3xl p-6 sm:p-8 shadow-md border border-pine-600/30 flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center gap-1.5">
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-lime-400 text-pine-900 flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5" />
               Tax Twin 2026 Engine
             </span>
-            <span className="text-xs text-slate-400">Continuous Digital Twin Shadow</span>
+            <span className="text-xs text-white/80 font-medium">Continuous Digital Twin Shadow</span>
           </div>
           <h1 className="text-2xl font-bold text-white mt-2">Year-Round Planning & Scenario Simulator</h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-white/85 mt-1 max-w-2xl">
             Simulate high-impact tax events, optimize quarterly estimated tax payments, and avoid penalties before filing season.
           </p>
         </div>
 
         {/* Real-time Tax Twin Metrics */}
-        <div className="flex items-center gap-4 bg-slate-950/80 border border-slate-800 p-3 rounded-2xl">
+        <div className="flex items-center gap-4 bg-pine-800/80 border border-pine-600/50 p-4 rounded-2xl shadow-xs">
           <div className="text-right">
-            <span className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Projected 2026 AGI</span>
+            <span className="text-[11px] text-white/70 uppercase tracking-wider font-semibold">Projected 2026 AGI</span>
             <div className="text-xl font-bold text-white font-mono">$168,400</div>
           </div>
-          <div className="h-8 w-[1px] bg-slate-800" />
+          <div className="h-8 w-[1px] bg-pine-600" />
           <div className="text-right">
-            <span className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Effective Tax Rate</span>
-            <div className="text-xl font-bold text-emerald-400 font-mono">19.8%</div>
+            <span className="text-[11px] text-white/70 uppercase tracking-wider font-semibold">Effective Tax Rate</span>
+            <div className="text-xl font-bold text-lime-300 font-mono">19.8%</div>
           </div>
         </div>
       </div>
@@ -101,26 +101,26 @@ export function YearRoundPlanningView() {
         <div className="lg:col-span-7 space-y-6">
           
           {/* SCENARIO 1: Section 179 Equipment Purchase */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4">
+          <div className="bg-white border border-sage-300 rounded-3xl p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 rounded-2xl bg-pine-100 text-pine-800 border border-pine-200">
                   <Calculator className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white">Scenario A: Section 179 Equipment Write-Off</h3>
-                  <p className="text-xs text-slate-400">Simulate immediate expensing of computers, cameras, or machinery</p>
+                  <h3 className="text-sm font-bold text-sage-900">Scenario A: Section 179 Equipment Write-Off</h3>
+                  <p className="text-xs text-sage-600">Simulate immediate expensing of computers, cameras, or machinery</p>
                 </div>
               </div>
-              <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-lime-200 text-pine-950 border border-lime-300">
                 +${estimatedTaxSavings.toLocaleString()} Est. Savings
               </span>
             </div>
 
             <div className="space-y-3 pt-2">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-300 font-medium">Asset Purchase Price:</span>
-                <span className="font-mono text-white font-bold">${equipmentCost.toLocaleString()}</span>
+                <span className="text-sage-700 font-semibold">Asset Purchase Price:</span>
+                <span className="font-mono text-sage-950 font-extrabold text-sm">${equipmentCost.toLocaleString()}</span>
               </div>
               <input
                 type="range"
@@ -129,20 +129,20 @@ export function YearRoundPlanningView() {
                 step="5000"
                 value={equipmentCost}
                 onChange={(e) => setEquipmentCost(Number(e.target.value))}
-                className="w-full accent-blue-500 cursor-pointer"
+                className="w-full accent-pine-700 cursor-pointer"
               />
-              <div className="flex justify-between text-[11px] text-slate-500 font-mono">
+              <div className="flex justify-between text-[11px] text-sage-500 font-mono">
                 <span>$5,000</span>
                 <span>$50,000</span>
                 <span>$100,000</span>
               </div>
 
               {/* State Non-Conformity Notice */}
-              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs flex items-start gap-2.5">
-                <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <div className="bg-sage-50 p-3.5 rounded-2xl border border-sage-200 text-xs flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-semibold text-slate-200">State Statutory Divergence (Cal. RTC § 17255):</span>
-                  <p className="text-slate-400 text-[11px] mt-0.5">
+                  <span className="font-bold text-sage-900">State Statutory Divergence (Cal. RTC § 17255):</span>
+                  <p className="text-sage-600 text-[11px] mt-0.5">
                     Federal IRC § 179 allows full deduction of ${equipmentCost.toLocaleString()}. California caps the first-year deduction at $25,000. Excess (${Math.max(0, equipmentCost - 25000).toLocaleString()}) must be added back on CA Form 3885A and depreciated via MACRS.
                   </p>
                 </div>
@@ -151,31 +151,31 @@ export function YearRoundPlanningView() {
           </div>
 
           {/* SCENARIO 2: S-Corp Election & Reasonable Salary */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4">
+          <div className="bg-white border border-sage-300 rounded-3xl p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 rounded-2xl bg-pine-100 text-pine-800 border border-pine-200">
                   <Building2 className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white">Scenario B: S-Corp Election & Salary Split</h3>
-                  <p className="text-xs text-slate-400">Optimize W-2 salary vs. K-1 distributions to reduce 15.3% FICA</p>
+                  <h3 className="text-sm font-bold text-sage-900">Scenario B: S-Corp Election & Salary Split</h3>
+                  <p className="text-xs text-sage-600">Optimize W-2 salary vs. K-1 distributions to reduce 15.3% FICA</p>
                 </div>
               </div>
-              <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-lime-200 text-pine-950 border border-lime-300">
                 +${seTaxSavings.toLocaleString()} FICA Savings
               </span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
               <div>
-                <label className="text-xs font-semibold text-slate-300">Total Net Business Profit:</label>
-                <div className="mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono">
+                <label className="text-xs font-semibold text-sage-700">Total Net Business Profit:</label>
+                <div className="mt-1 bg-sage-50 border border-sage-200 rounded-xl px-3 py-2 text-xs text-sage-900 font-mono font-bold">
                   ${sCorpNetIncome.toLocaleString()}
                 </div>
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-300">Reasonable W-2 Salary (IRS Rev. Rul. 74-44):</label>
+                <label className="text-xs font-semibold text-sage-700">Reasonable W-2 Salary (IRS Rev. Rul. 74-44):</label>
                 <div className="mt-1 flex items-center gap-2">
                   <input
                     type="number"
@@ -184,33 +184,33 @@ export function YearRoundPlanningView() {
                     step="5000"
                     min="30000"
                     max={sCorpNetIncome}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-purple-500"
+                    className="w-full bg-sage-50 border border-sage-200 rounded-xl px-3 py-2 text-xs text-sage-900 font-mono font-bold focus:outline-none focus:border-pine-700"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="text-[11px] text-slate-400 bg-slate-950 p-3 rounded-xl border border-slate-800">
-              Distributions: <strong className="text-purple-300 font-mono">${distributions.toLocaleString()}</strong> are exempt from 12.4% Social Security and 2.9% Medicare self-employment taxes.
+            <div className="text-[11px] text-sage-700 bg-sage-50 p-3 rounded-2xl border border-sage-200">
+              Distributions: <strong className="text-pine-800 font-mono font-bold">${distributions.toLocaleString()}</strong> are exempt from 12.4% Social Security and 2.9% Medicare self-employment taxes.
             </div>
           </div>
 
           {/* SCENARIO 3: State Residency Relocation */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4">
+          <div className="bg-white border border-sage-300 rounded-3xl p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 rounded-2xl bg-pine-100 text-pine-800 border border-pine-200">
                   <MapPin className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white">Scenario C: Multi-State Relocation (183-Day Test)</h3>
-                  <p className="text-xs text-slate-400">Simulate moving tax domicile to a no-income-tax state</p>
+                  <h3 className="text-sm font-bold text-sage-900">Scenario C: Multi-State Relocation (183-Day Test)</h3>
+                  <p className="text-xs text-sage-600">Simulate moving tax domicile to a no-income-tax state</p>
                 </div>
               </div>
-              <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+              <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                 daysInDest >= 183
-                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                  : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                  ? 'bg-lime-200 text-pine-950 border border-lime-300'
+                  : 'bg-rose-100 text-rose-800 border border-rose-200'
               }`}>
                 {daysInDest >= 183 ? `+$${stateTaxSaved.toLocaleString()} Saved` : 'Residency Not Met'}
               </span>
@@ -218,11 +218,11 @@ export function YearRoundPlanningView() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 text-xs">
               <div>
-                <span className="text-slate-400">Departing State:</span>
+                <span className="text-sage-600 font-medium">Departing State:</span>
                 <select
                   value={currentHomeState}
                   onChange={(e) => setCurrentHomeState(e.target.value as any)}
-                  className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-2 text-white"
+                  className="w-full mt-1 bg-sage-50 border border-sage-200 rounded-xl px-2.5 py-2 text-sage-900 font-semibold"
                 >
                   <option value="NY">New York (6.85% + NYC)</option>
                   <option value="CA">California (9.3%)</option>
@@ -230,11 +230,11 @@ export function YearRoundPlanningView() {
               </div>
 
               <div>
-                <span className="text-slate-400">Destination State:</span>
+                <span className="text-sage-600 font-medium">Destination State:</span>
                 <select
                   value={destState}
                   onChange={(e) => setDestState(e.target.value as any)}
-                  className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-2 text-white"
+                  className="w-full mt-1 bg-sage-50 border border-sage-200 rounded-xl px-2.5 py-2 text-sage-900 font-semibold"
                 >
                   <option value="FL">Florida (0.0%)</option>
                   <option value="TX">Texas (0.0%)</option>
@@ -242,25 +242,25 @@ export function YearRoundPlanningView() {
               </div>
 
               <div>
-                <span className="text-slate-400">Days Spent in Dest ({daysInDest}):</span>
+                <span className="text-sage-600 font-medium">Days Spent in Dest ({daysInDest}):</span>
                 <input
                   type="range"
                   min="60"
                   max="300"
                   value={daysInDest}
                   onChange={(e) => setDaysInDest(Number(e.target.value))}
-                  className="w-full mt-2 accent-amber-500 cursor-pointer"
+                  className="w-full mt-2 accent-pine-700 cursor-pointer"
                 />
               </div>
             </div>
 
-            <div className="text-[11px] text-slate-400 bg-slate-950 p-3 rounded-xl border border-slate-800">
+            <div className="text-[11px] text-sage-700 bg-sage-50 p-3 rounded-2xl border border-sage-200">
               {daysInDest >= 183 ? (
-                <span className="text-emerald-400 font-medium">
+                <span className="text-pine-800 font-bold">
                   ✓ Passed statutory 183-day bright-line presence test. Domicile change recognized; ${stateTaxSaved.toLocaleString()} state tax eliminated.
                 </span>
               ) : (
-                <span className="text-amber-400 font-medium">
+                <span className="text-amber-800 font-bold">
                   ⚠ Under 183 days. {currentHomeState} DTF/FTB retains full resident taxation on worldwide income.
                 </span>
               )}
@@ -272,41 +272,41 @@ export function YearRoundPlanningView() {
         {/* Right Column: Quarterly Estimated Payments & Safe Harbor (5 cols) */}
         <div className="lg:col-span-5 space-y-6">
           
-          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div className="bg-white border border-sage-300 rounded-3xl p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-sage-200">
               <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-emerald-400" />
-                <h3 className="text-sm font-bold text-white">Quarterly Estimated Taxes (Form 1040-ES)</h3>
+                <Calendar className="w-4 h-4 text-pine-700" />
+                <h3 className="text-sm font-bold text-sage-900">Quarterly Estimated Taxes (Form 1040-ES)</h3>
               </div>
-              <span className="text-xs text-slate-400 font-mono">Tax Year 2026</span>
+              <span className="text-xs text-sage-600 font-mono font-semibold">Tax Year 2026</span>
             </div>
 
             {/* Safe Harbor Rule Selector */}
             <div className="space-y-2">
-              <span className="text-xs font-semibold text-slate-300">Penalty Protection Safe Harbor:</span>
+              <span className="text-xs font-semibold text-sage-700">Penalty Protection Safe Harbor:</span>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => setSafeHarborMethod('PRIOR_YEAR_110')}
-                  className={`p-2.5 rounded-xl text-xs font-medium text-left border transition ${
+                  className={`p-3 rounded-2xl text-xs font-medium text-left border transition ${
                     safeHarborMethod === 'PRIOR_YEAR_110'
-                      ? 'bg-blue-600/20 border-blue-500 text-blue-300'
-                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                      ? 'bg-pine-700 border-pine-700 text-white shadow-xs'
+                      : 'bg-sage-50 border-sage-200 text-sage-700 hover:bg-sage-100'
                   }`}
                 >
                   <div className="font-bold">110% Prior Year</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">AGI &gt; $150k Safe Harbor</div>
+                  <div className={`text-[10px] mt-0.5 ${safeHarborMethod === 'PRIOR_YEAR_110' ? 'text-white/80' : 'text-sage-500'}`}>AGI &gt; $150k Safe Harbor</div>
                 </button>
 
                 <button
                   onClick={() => setSafeHarborMethod('CURRENT_YEAR_90')}
-                  className={`p-2.5 rounded-xl text-xs font-medium text-left border transition ${
+                  className={`p-3 rounded-2xl text-xs font-medium text-left border transition ${
                     safeHarborMethod === 'CURRENT_YEAR_90'
-                      ? 'bg-blue-600/20 border-blue-500 text-blue-300'
-                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                      ? 'bg-pine-700 border-pine-700 text-white shadow-xs'
+                      : 'bg-sage-50 border-sage-200 text-sage-700 hover:bg-sage-100'
                   }`}
                 >
                   <div className="font-bold">90% Current Year</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">Projected 2026 Liability</div>
+                  <div className={`text-[10px] mt-0.5 ${safeHarborMethod === 'CURRENT_YEAR_90' ? 'text-white/80' : 'text-sage-500'}`}>Projected 2026 Liability</div>
                 </button>
               </div>
             </div>
@@ -323,28 +323,28 @@ export function YearRoundPlanningView() {
                 return (
                   <div
                     key={q.quarter}
-                    className={`p-3.5 rounded-xl border flex items-center justify-between gap-3 ${
+                    className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 ${
                       isScheduled
-                        ? 'bg-slate-950/90 border-emerald-500/30'
-                        : 'bg-slate-950/50 border-slate-800'
+                        ? 'bg-pine-50 border-pine-200'
+                        : 'bg-sage-50/70 border-sage-200'
                     }`}
                   >
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-xs text-white">{q.quarter} Voucher</span>
-                        <span className="text-[11px] text-slate-400">Due {q.due}</span>
+                        <span className="font-bold text-xs text-sage-900">{q.quarter} Voucher</span>
+                        <span className="text-[11px] text-sage-600">Due {q.due}</span>
                       </div>
-                      <div className="text-sm font-bold font-mono text-emerald-400 mt-1">
+                      <div className="text-sm font-extrabold font-mono text-pine-800 mt-1">
                         ${q.amount.toLocaleString()}
                       </div>
                     </div>
 
                     <button
                       onClick={() => handleTogglePayment(q.quarter)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 ${
+                      className={`px-3 py-1.5 rounded-2xl text-xs font-bold transition flex items-center gap-1.5 ${
                         isScheduled
-                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30'
-                          : 'bg-blue-600 hover:bg-blue-500 text-white'
+                          ? 'bg-lime-300 text-pine-900 border border-lime-400 hover:bg-lime-400'
+                          : 'bg-pine-700 hover:bg-pine-800 text-white'
                       }`}
                     >
                       {isScheduled ? (
@@ -364,8 +364,8 @@ export function YearRoundPlanningView() {
               })}
             </div>
 
-            <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-[11px] text-slate-400 flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+            <div className="bg-sage-50 p-3 rounded-2xl border border-sage-200 text-[11px] text-sage-700 flex items-center gap-2 font-medium">
+              <ShieldCheck className="w-4 h-4 text-pine-700 shrink-0" />
               <span>
                 100% immunity from IRC § 6654 underpayment penalties achieved via Safe Harbor calculation.
               </span>

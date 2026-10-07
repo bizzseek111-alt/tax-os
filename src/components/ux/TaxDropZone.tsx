@@ -122,7 +122,7 @@ export function TaxDropZone({ onDocumentAdded }: TaxDropZoneProps) {
   };
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm">
+    <div className="bg-white border border-sage-300 rounded-3xl p-6 shadow-sm">
       <input
         type="file"
         ref={fileInputRef}
@@ -134,25 +134,25 @@ export function TaxDropZone({ onDocumentAdded }: TaxDropZoneProps) {
 
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+          <div className="p-2.5 rounded-2xl bg-pine-100 text-pine-800 border border-pine-200">
             <UploadCloud className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+            <h3 className="text-sm font-bold text-sage-900 flex items-center gap-2">
               TaxDrop — Intelligent Ingestion Vault
-              <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-pine-100 text-pine-800 border border-pine-200">
                 Live CAS Pipeline
               </span>
             </h3>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-sage-600 mt-0.5">
               Drag PDFs, receipts, CSVs, or tax packets. AI classifies and matches deterministically.
             </p>
           </div>
         </div>
 
         <div className="text-right hidden sm:block">
-          <span className="text-xs font-mono text-emerald-400 font-semibold block">{recentDocs.length + 34} Documents Ingested</span>
-          <span className="text-[11px] text-slate-500">Auto-Deduplication Active</span>
+          <span className="text-xs font-mono text-pine-800 font-bold block">{recentDocs.length + 34} Documents Ingested</span>
+          <span className="text-[11px] text-sage-500 font-medium">Auto-Deduplication Active</span>
         </div>
       </div>
 
@@ -172,32 +172,32 @@ export function TaxDropZone({ onDocumentAdded }: TaxDropZoneProps) {
             handleSimulateDrop('RECEIPT'); 
           }
         }}
-        className={`border-2 border-dashed rounded-xl p-6 sm:p-8 text-center transition cursor-pointer relative ${
+        className={`border-2 border-dashed rounded-3xl p-6 sm:p-8 text-center transition cursor-pointer relative ${
           isDragging 
-            ? 'border-blue-500 bg-blue-500/5' 
-            : 'border-slate-700/80 hover:border-slate-600 bg-slate-950/60'
+            ? 'border-pine-600 bg-pine-50/60' 
+            : 'border-sage-300 hover:border-pine-600 bg-sage-50/70'
         }`}
       >
         {isProcessing ? (
           <div className="py-4 space-y-3">
-            <div className="w-10 h-10 mx-auto rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center animate-spin text-blue-400">
+            <div className="w-10 h-10 mx-auto rounded-full bg-pine-100 border border-pine-300 flex items-center justify-center animate-spin text-pine-800">
               <RefreshCw className="w-5 h-5" />
             </div>
-            <div className="text-sm font-semibold text-slate-200">{processingStage}</div>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto">
+            <div className="text-sm font-bold text-sage-900">{processingStage}</div>
+            <p className="text-xs text-sage-600 max-w-sm mx-auto">
               Running deterministic OCR parsing, cryptographic hashing, and transaction cross-matching...
             </p>
           </div>
         ) : (
           <div className="space-y-3">
-            <div className="w-12 h-12 mx-auto rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+            <div className="w-12 h-12 mx-auto rounded-2xl bg-pine-700 text-white flex items-center justify-center shadow-xs">
               <UploadCloud className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-sm font-semibold text-slate-200">
+              <div className="text-sm font-bold text-sage-900">
                 Drop your tax forms, bank CSVs, or receipts here
               </div>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-sage-600 mt-1">
                 Supports PDF, JPG, PNG, CSV, Excel, or ZIP bundles up to 100MB
               </p>
             </div>
@@ -206,7 +206,7 @@ export function TaxDropZone({ onDocumentAdded }: TaxDropZoneProps) {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition shadow-sm flex items-center gap-1.5"
+                className="px-4 py-2 rounded-2xl bg-lime-400 hover:bg-lime-500 text-pine-900 text-xs font-bold transition shadow-xs flex items-center gap-1.5"
               >
                 <FolderOpen className="w-3.5 h-3.5" />
                 <span>Browse Files...</span>
@@ -214,14 +214,14 @@ export function TaxDropZone({ onDocumentAdded }: TaxDropZoneProps) {
               <button
                 type="button"
                 onClick={() => handleSimulateDrop('RECEIPT')}
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition border border-slate-700"
+                className="px-3.5 py-1.5 rounded-2xl bg-white hover:bg-sage-100 text-sage-800 text-xs font-semibold transition border border-sage-300"
               >
                 + Drop Delta Flight Receipt
               </button>
               <button
                 type="button"
                 onClick={() => handleSimulateDrop('PRIOR_RETURN')}
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition border border-slate-700"
+                className="px-3.5 py-1.5 rounded-2xl bg-white hover:bg-sage-100 text-sage-800 text-xs font-semibold transition border border-sage-300"
               >
                 + Drop 2025 Prior Return
               </button>
@@ -232,35 +232,35 @@ export function TaxDropZone({ onDocumentAdded }: TaxDropZoneProps) {
 
       {/* Ingested Documents List */}
       <div className="mt-5 space-y-2">
-        <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+        <div className="text-xs font-semibold text-sage-600 uppercase tracking-wider flex items-center justify-between">
           <span>Recently Ingested Artifacts ({recentDocs.length})</span>
-          <span className="text-[11px] text-slate-500">Auto-Encrypted AES-256</span>
+          <span className="text-[11px] text-sage-500">Auto-Encrypted AES-256</span>
         </div>
 
-        <div className="divide-y divide-slate-800/80 border border-slate-800 rounded-xl overflow-hidden bg-slate-950/70">
+        <div className="divide-y divide-sage-200 border border-sage-200 rounded-2xl overflow-hidden bg-white">
           {recentDocs.map((doc) => (
-            <div key={doc.id} className="p-3 flex items-center justify-between gap-3 text-xs hover:bg-slate-900/50 transition">
+            <div key={doc.id} className="p-3 flex items-center justify-between gap-3 text-xs hover:bg-sage-50/50 transition">
               <div className="flex items-center gap-3 min-w-0">
-                <div className={`p-1.5 rounded-lg shrink-0 ${
+                <div className={`p-1.5 rounded-xl shrink-0 ${
                   doc.status === 'DUPLICATE_REMOVED'
-                    ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-                    : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                    ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                    : 'bg-pine-100 text-pine-800 border border-pine-200'
                 }`}>
                   {doc.status === 'DUPLICATE_REMOVED' ? <AlertCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
                 </div>
 
                 <div className="min-w-0">
-                  <div className="font-medium text-slate-200 truncate">{doc.name}</div>
-                  <div className="text-[11px] text-slate-400 mt-0.5">{doc.extractedInfo}</div>
+                  <div className="font-semibold text-sage-900 truncate">{doc.name}</div>
+                  <div className="text-[11px] text-sage-600 mt-0.5">{doc.extractedInfo}</div>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 shrink-0 text-right">
-                <span className="font-mono text-[10px] text-slate-500 hidden sm:inline">{doc.hash}</span>
-                <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${
+                <span className="font-mono text-[10px] text-sage-500 hidden sm:inline">{doc.hash}</span>
+                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                   doc.status === 'DUPLICATE_REMOVED'
-                    ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20'
-                    : 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20'
+                    ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                    : 'bg-lime-200 text-pine-900 border border-lime-400'
                 }`}>
                   {doc.status === 'DUPLICATE_REMOVED' ? 'Duplicate Dropped' : 'Reconciled'}
                 </span>

@@ -56,13 +56,13 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
   };
 
   return (
-    <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-xl w-full p-6 md:p-8 space-y-6 shadow-2xl relative">
+    <div className="fixed inset-0 bg-pine-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white border border-sage-300 rounded-3xl max-w-xl w-full p-6 md:p-8 space-y-6 shadow-2xl relative">
         
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-800 transition"
+          className="absolute top-5 right-5 text-sage-400 hover:text-sage-700 p-2 rounded-full hover:bg-sage-100 transition"
         >
           <X className="w-5 h-5" />
         </button>
@@ -74,45 +74,45 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
               <div
                 key={i}
                 className={`h-2 rounded-full transition-all duration-300 ${
-                  i === step ? 'w-8 bg-blue-500' : i < step ? 'w-4 bg-emerald-500' : 'w-4 bg-slate-800'
+                  i === step ? 'w-8 bg-pine-700' : i < step ? 'w-4 bg-lime-500' : 'w-4 bg-sage-200'
                 }`}
               />
             ))}
           </div>
-          <span className="text-xs font-semibold text-slate-400">Step {step} of 4</span>
+          <span className="text-xs font-semibold text-sage-500">Step {step} of 4</span>
         </div>
 
         {/* STEP 1: Identity & Tax Year */}
         {step === 1 && (
           <div className="space-y-4">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-blue-400">Step 1 • Identity Essentials</span>
-              <h2 className="text-xl font-bold text-white mt-1">Let's set up your 2026 tax workspace</h2>
-              <p className="text-xs text-slate-400 mt-1">
+              <span className="text-xs font-bold uppercase tracking-wider text-pine-700">Step 1 • Identity Essentials</span>
+              <h2 className="text-xl font-bold text-sage-950 mt-1">Let's set up your 2026 tax workspace</h2>
+              <p className="text-xs text-sage-600 mt-1">
                 We only ask what is legally mandatory to establish your tax profile.
               </p>
             </div>
 
             <div className="space-y-3 pt-2">
               <div>
-                <label className="text-xs font-semibold text-slate-300">Your Full Legal Name:</label>
+                <label className="text-xs font-semibold text-sage-700">Your Full Legal Name:</label>
                 <input
                   type="text"
                   value={taxpayerName}
                   onChange={(e) => setTaxpayerName(e.target.value)}
-                  className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
+                  className="w-full mt-1 bg-sage-50 border border-sage-300 rounded-xl px-3.5 py-2.5 text-xs text-sage-900 focus:outline-none focus:border-pine-600"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300">Tax Year (Anchored):</label>
-                <div className="mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-300 font-mono">
+                <label className="text-xs font-semibold text-sage-700">Tax Year (Anchored):</label>
+                <div className="mt-1 bg-sage-50 border border-sage-300 rounded-xl px-3.5 py-2 text-xs text-sage-800 font-mono">
                   {taxYear} Calendar Year Filing
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300">Filing Status:</label>
+                <label className="text-xs font-semibold text-sage-700">Filing Status:</label>
                 <div className="grid grid-cols-3 gap-2 mt-1">
                   {(['SINGLE', 'MARRIED_JOINT', 'HEAD_OF_HOUSEHOLD'] as const).map((status) => (
                     <button
@@ -121,8 +121,8 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
                       onClick={() => setFilingStatus(status)}
                       className={`py-2 px-2 rounded-xl text-xs font-semibold transition border ${
                         filingStatus === status
-                          ? 'bg-blue-600/20 border-blue-500 text-blue-300'
-                          : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                          ? 'bg-pine-700 border-pine-700 text-white font-bold'
+                          : 'bg-white border-sage-300 text-sage-600 hover:text-sage-900'
                       }`}
                     >
                       {status.replace('_', ' ')}
@@ -138,9 +138,9 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
         {step === 2 && (
           <div className="space-y-4">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-blue-400">Step 2 • Jurisdiction Selection</span>
-              <h2 className="text-xl font-bold text-white mt-1">Where did you live or earn in 2026?</h2>
-              <p className="text-xs text-slate-400 mt-1">
+              <span className="text-xs font-bold uppercase tracking-wider text-pine-700">Step 2 • Jurisdiction Selection</span>
+              <h2 className="text-xl font-bold text-sage-950 mt-1">Where did you live or earn in 2026?</h2>
+              <p className="text-xs text-sage-600 mt-1">
                 Select your resident state and any states where you performed services.
               </p>
             </div>
@@ -161,15 +161,15 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
                     onClick={() => toggleState(st.id)}
                     className={`p-3 rounded-2xl border text-left flex items-center justify-between transition ${
                       isSelected
-                        ? 'bg-blue-600/20 border-blue-500 text-white'
-                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                        ? 'bg-lime-100/70 border-pine-600 text-pine-950 font-bold'
+                        : 'bg-white border-sage-300 text-sage-600 hover:text-sage-900 hover:border-sage-400'
                     }`}
                   >
                     <div>
                       <div className="text-xs font-bold">{st.name}</div>
-                      <div className="text-[10px] text-slate-500 font-mono">{st.id}</div>
+                      <div className="text-[10px] text-sage-500 font-mono">{st.id}</div>
                     </div>
-                    {isSelected && <Check className="w-4 h-4 text-blue-400" />}
+                    {isSelected && <Check className="w-4 h-4 text-pine-700" />}
                   </button>
                 );
               })}
@@ -181,9 +181,9 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
         {step === 3 && (
           <div className="space-y-4">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-blue-400">Step 3 • Income Profile</span>
-              <h2 className="text-xl font-bold text-white mt-1">How do you earn income?</h2>
-              <p className="text-xs text-slate-400 mt-1">
+              <span className="text-xs font-bold uppercase tracking-wider text-pine-700">Step 3 • Income Profile</span>
+              <h2 className="text-xl font-bold text-sage-950 mt-1">How do you earn income?</h2>
+              <p className="text-xs text-sage-600 mt-1">
                 Our AI agents will only configure deduction extractors matching your business profile.
               </p>
             </div>
@@ -203,12 +203,12 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
                     onClick={() => toggleProfile(prof.id)}
                     className={`w-full p-3 rounded-2xl border text-left flex items-center justify-between transition ${
                       isSelected
-                        ? 'bg-blue-600/20 border-blue-500 text-white'
-                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                        ? 'bg-lime-100/70 border-pine-600 text-pine-950 font-bold'
+                        : 'bg-white border-sage-300 text-sage-600 hover:text-sage-900 hover:border-sage-400'
                     }`}
                   >
                     <span className="text-xs font-medium">{prof.label}</span>
-                    {isSelected && <Check className="w-4 h-4 text-blue-400 shrink-0 ml-2" />}
+                    {isSelected && <Check className="w-4 h-4 text-pine-700 shrink-0 ml-2" />}
                   </button>
                 );
               })}
@@ -220,9 +220,9 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
         {step === 4 && (
           <div className="space-y-4">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-blue-400">Step 4 • Accelerate With Instant Ingestion</span>
-              <h2 className="text-xl font-bold text-white mt-1">Import prior return & connect accounts</h2>
-              <p className="text-xs text-slate-400 mt-1">
+              <span className="text-xs font-bold uppercase tracking-wider text-pine-700">Step 4 • Accelerate With Instant Ingestion</span>
+              <h2 className="text-xl font-bold text-sage-950 mt-1">Import prior return & connect accounts</h2>
+              <p className="text-xs text-sage-600 mt-1">
                 Drop your 2025 Form 1040 to auto-seed prior carryovers and depreciation schedules.
               </p>
             </div>
@@ -233,25 +233,25 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
                 onClick={() => setPriorReturnImported(!priorReturnImported)}
                 className={`p-4 rounded-2xl border cursor-pointer transition flex items-center justify-between ${
                   priorReturnImported
-                    ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300'
-                    : 'bg-slate-950 border-slate-800 hover:border-slate-700 text-slate-300'
+                    ? 'bg-lime-100/60 border-lime-500 text-pine-950'
+                    : 'bg-white border-sage-300 hover:border-sage-400 text-sage-800'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-slate-900 border border-slate-800">
-                    <FileCheck className="w-5 h-5 text-emerald-400" />
+                  <div className="p-2 rounded-xl bg-sage-100 border border-sage-200">
+                    <FileCheck className="w-5 h-5 text-pine-700" />
                   </div>
                   <div>
                     <div className="text-xs font-bold">2025 Form 1040 (PDF)</div>
-                    <div className="text-[11px] text-slate-400">
+                    <div className="text-[11px] text-sage-500">
                       {priorReturnImported ? 'Uploaded • Carryovers extracted' : 'Click to simulate instant import'}
                     </div>
                   </div>
                 </div>
                 {priorReturnImported ? (
-                  <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-400/20 text-emerald-300 font-bold">Imported</span>
+                  <span className="px-2 py-0.5 rounded text-[10px] bg-lime-200 text-pine-900 font-bold">Imported</span>
                 ) : (
-                  <span className="text-xs text-blue-400 font-medium">Select PDF</span>
+                  <span className="text-xs text-pine-700 font-bold">Select PDF</span>
                 )}
               </div>
 
@@ -260,25 +260,25 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
                 onClick={() => setPlaidConnected(!plaidConnected)}
                 className={`p-4 rounded-2xl border cursor-pointer transition flex items-center justify-between ${
                   plaidConnected
-                    ? 'bg-blue-500/10 border-blue-500/40 text-blue-300'
-                    : 'bg-slate-950 border-slate-800 hover:border-slate-700 text-slate-300'
+                    ? 'bg-lime-100/60 border-lime-500 text-pine-950'
+                    : 'bg-white border-sage-300 hover:border-sage-400 text-sage-800'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-slate-900 border border-slate-800">
-                    <Zap className="w-5 h-5 text-blue-400" />
+                  <div className="p-2 rounded-xl bg-sage-100 border border-sage-200">
+                    <Zap className="w-5 h-5 text-pine-700" />
                   </div>
                   <div>
                     <div className="text-xs font-bold">Connect Financial Accounts (Plaid)</div>
-                    <div className="text-[11px] text-slate-400">
+                    <div className="text-[11px] text-sage-500">
                       {plaidConnected ? 'Chase Business Checking connected (142 transactions)' : 'Auto-classify business deductions'}
                     </div>
                   </div>
                 </div>
                 {plaidConnected ? (
-                  <span className="px-2 py-0.5 rounded text-[10px] bg-blue-400/20 text-blue-300 font-bold">Connected</span>
+                  <span className="px-2 py-0.5 rounded text-[10px] bg-lime-200 text-pine-900 font-bold">Connected</span>
                 ) : (
-                  <span className="text-xs text-blue-400 font-medium">Connect</span>
+                  <span className="text-xs text-pine-700 font-bold">Connect</span>
                 )}
               </div>
             </div>
@@ -286,11 +286,11 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
         )}
 
         {/* Footer Navigation Buttons */}
-        <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+        <div className="flex items-center justify-between pt-4 border-t border-sage-200">
           {step > 1 ? (
             <button
               onClick={() => setStep(step - 1)}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition flex items-center gap-1.5"
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-sage-600 hover:text-sage-900 hover:bg-sage-100 transition flex items-center gap-1.5"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back</span>
@@ -302,7 +302,7 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
           {step < 4 ? (
             <button
               onClick={() => setStep(step + 1)}
-              className="px-5 py-2.5 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white transition flex items-center gap-2"
+              className="px-5 py-2.5 rounded-xl text-xs font-bold bg-pine-700 hover:bg-pine-800 text-white transition flex items-center gap-2"
             >
               <span>Continue</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -311,11 +311,11 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
             <button
               onClick={handleFinish}
               disabled={isBuilding}
-              className="px-6 py-2.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white transition shadow-lg shadow-blue-600/30 flex items-center gap-2"
+              className="px-6 py-2.5 rounded-xl text-xs font-bold bg-lime-400 hover:bg-lime-500 text-pine-900 transition shadow-md flex items-center gap-2"
             >
               {isBuilding ? (
                 <>
-                  <Sparkles className="w-4 h-4 animate-spin text-amber-300" />
+                  <Sparkles className="w-4 h-4 animate-spin text-pine-800" />
                   <span>Building Tax Workspace...</span>
                 </>
               ) : (

@@ -191,19 +191,19 @@ export function TaxProfessionalView() {
   return (
     <div className="space-y-6">
       {/* Top Header & Triage Statistics */}
-      <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-4">
+      <div className="p-6 rounded-3xl bg-white border border-sage-300 shadow-sm flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+          <div className="p-2.5 rounded-2xl bg-pine-100 text-pine-800 border border-pine-200">
             <Users className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
+            <h2 className="text-base font-bold text-sage-900 flex items-center gap-2">
               Tax Professional Workspace — CPA & EA Review
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-blue-500/10 text-blue-400 border border-blue-500/30">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-pine-100 text-pine-800 border border-pine-200">
                 PTIN #P01948291
               </span>
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-sage-600 mt-0.5">
               Review exceptions first. Deterministic math and citation lineage are pre-verified.
             </p>
           </div>
@@ -211,17 +211,17 @@ export function TaxProfessionalView() {
 
         {/* Triage Metrics */}
         <div className="flex items-center gap-3 text-xs">
-          <div className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-center">
-            <span className="text-slate-400 block text-[10px] uppercase">Assigned</span>
-            <span className="font-bold text-slate-100 font-mono">{cases.length} Cases</span>
+          <div className="px-3.5 py-2 rounded-2xl bg-sage-50 border border-sage-200 text-center">
+            <span className="text-sage-500 block text-[10px] uppercase font-bold">Assigned</span>
+            <span className="font-extrabold text-sage-900 font-mono">{cases.length} Cases</span>
           </div>
-          <div className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
-            <span className="text-emerald-400 block text-[10px] uppercase">Ready for Review</span>
-            <span className="font-bold text-emerald-300 font-mono">2 Cases</span>
+          <div className="px-3.5 py-2 rounded-2xl bg-lime-100 border border-lime-300 text-center">
+            <span className="text-pine-900 block text-[10px] uppercase font-bold">Ready for Review</span>
+            <span className="font-extrabold text-pine-900 font-mono">2 Cases</span>
           </div>
-          <div className="px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center">
-            <span className="text-amber-400 block text-[10px] uppercase">Exceptions</span>
-            <span className="font-bold text-amber-300 font-mono">6 Total</span>
+          <div className="px-3.5 py-2 rounded-2xl bg-amber-50 border border-amber-200 text-center">
+            <span className="text-amber-800 block text-[10px] uppercase font-bold">Exceptions</span>
+            <span className="font-extrabold text-amber-900 font-mono">6 Total</span>
           </div>
         </div>
       </div>
@@ -229,7 +229,7 @@ export function TaxProfessionalView() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Assigned Cases Triage Queue */}
         <div className="lg:col-span-4 space-y-3">
-          <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center justify-between px-1">
+          <div className="text-xs font-semibold text-sage-600 uppercase tracking-wider flex items-center justify-between px-1">
             <span>Case Triage Queue</span>
             <span>Sorted by Risk</span>
           </div>
@@ -242,18 +242,18 @@ export function TaxProfessionalView() {
                   setSelectedCaseId(c.id);
                   setOverrideActive(false);
                 }}
-                className={`p-4 rounded-xl border transition cursor-pointer ${
+                className={`p-4 rounded-2xl border transition cursor-pointer ${
                   selectedCaseId === c.id
-                    ? 'bg-slate-900 border-blue-500/50 shadow-md ring-1 ring-blue-500/20'
-                    : 'bg-slate-950/70 border-slate-800 hover:border-slate-700 hover:bg-slate-900/40'
+                    ? 'bg-pine-50 border-pine-600 shadow-xs ring-1 ring-pine-600'
+                    : 'bg-white border-sage-200 hover:border-sage-300 hover:bg-sage-50/50'
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-slate-200 truncate">{c.clientName}</span>
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold ${
-                    c.riskRating === 'HIGH' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30' :
-                    c.riskRating === 'MEDIUM' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30' :
-                    'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                  <span className="text-xs font-bold text-sage-900 truncate">{c.clientName}</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    c.riskRating === 'HIGH' ? 'bg-rose-100 text-rose-800 border border-rose-200' :
+                    c.riskRating === 'MEDIUM' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
+                    'bg-lime-200 text-pine-900 border border-lime-300'
                   }`}>
                     {c.riskRating} RISK
                   </span>
@@ -261,26 +261,26 @@ export function TaxProfessionalView() {
 
                 <div className="flex items-center gap-1.5 mb-3">
                   {c.states.map((st) => (
-                    <span key={st} className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-slate-800 text-slate-300">
+                    <span key={st} className="px-2 py-0.5 rounded-md text-[10px] font-mono bg-sage-100 text-sage-700 font-semibold">
                       {st}
                     </span>
                   ))}
                   {signedCases[c.id] && (
-                    <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-lime-200 text-pine-900 border border-lime-400">
                       SIGNED ✓
                     </span>
                   )}
                   {escalatedCases[c.id] && (
-                    <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-pine-100 text-pine-900 border border-pine-300">
                       ATTORNEY ⚖
                     </span>
                   )}
                 </div>
 
-                <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800/80">
-                  <span>Comp: <strong className="text-slate-200 font-mono">{c.completeness}%</strong></span>
-                  <span>AI Conf: <strong className="text-emerald-400 font-mono">{c.aiConfidence}%</strong></span>
-                  <span className="text-amber-400 font-semibold">{c.openExceptions} Exc</span>
+                <div className="flex items-center justify-between text-xs text-sage-600 pt-2 border-t border-sage-200">
+                  <span>Comp: <strong className="text-sage-900 font-mono">{c.completeness}%</strong></span>
+                  <span>AI Conf: <strong className="text-pine-800 font-mono font-bold">{c.aiConfidence}%</strong></span>
+                  <span className="text-amber-800 font-bold">{c.openExceptions} Exc</span>
                 </div>
               </div>
             ))}
@@ -289,19 +289,19 @@ export function TaxProfessionalView() {
 
         {/* Right Column: Comprehensive AI REVIEW BRIEF */}
         <div className="lg:col-span-8 space-y-6">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
+          <div className="bg-white border border-sage-300 rounded-3xl p-6 shadow-sm space-y-6">
             {/* Case Header */}
-            <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-800">
+            <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-sage-200">
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-bold text-slate-100">
+                  <h3 className="text-lg font-bold text-sage-900">
                     AI Review Brief — {currentCase.clientName}
                   </h3>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-300">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sage-100 text-sage-700">
                     ID: {currentCase.id}
                   </span>
                 </div>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-sage-600 mt-0.5">
                   Automated verification passed. {currentCase.openExceptions} exception(s) requiring professional determination.
                 </p>
               </div>
@@ -310,10 +310,10 @@ export function TaxProfessionalView() {
                 <button
                   onClick={handleSignCase}
                   disabled={isCaseSigned}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                  className={`px-4 py-2 rounded-2xl text-xs font-bold transition flex items-center gap-1.5 ${
                     isCaseSigned
-                      ? 'bg-emerald-600 text-white cursor-default shadow-emerald-500/20 shadow-md'
-                      : 'bg-blue-600 hover:bg-blue-500 text-white shadow-sm'
+                      ? 'bg-pine-700 text-white cursor-default shadow-xs'
+                      : 'bg-lime-400 hover:bg-lime-500 text-pine-900 shadow-xs'
                   }`}
                 >
                   <Check className="w-4 h-4" />
@@ -325,72 +325,72 @@ export function TaxProfessionalView() {
             {/* AI Review Brief Dynamic Sections */}
             <div className="space-y-4">
               {/* Section 1: Income Reconciliation */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+              <div className="p-4 rounded-2xl bg-sage-50 border border-sage-200 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">
+                    <CheckCircle2 className="w-4 h-4 text-pine-700" />
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-sage-900">
                       1. Income Reconciliation & Double-Counting Audit
                     </h4>
                   </div>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-lime-200 text-pine-900 border border-lime-300">
                     PASSED (0 Duplicates)
                   </span>
                 </div>
-                <p className="text-xs text-slate-400 leading-relaxed">
+                <p className="text-xs text-sage-700 leading-relaxed">
                   {currentCase.incomeSummary}
                 </p>
               </div>
 
               {/* Section 2: Evidence & Substantiation */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+              <div className="p-4 rounded-2xl bg-sage-50 border border-sage-200 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">
+                    <CheckCircle2 className="w-4 h-4 text-pine-700" />
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-sage-900">
                       2. Documentary Evidence & Substantiation Health
                     </h4>
                   </div>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-lime-200 text-pine-900 border border-lime-300">
                     PASSED
                   </span>
                 </div>
-                <p className="text-xs text-slate-400 leading-relaxed">
+                <p className="text-xs text-sage-700 leading-relaxed">
                   {currentCase.evidenceSummary}
                 </p>
               </div>
 
               {/* Section 3: Federal Tax Positions & Material Exception */}
-              <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/30 space-y-3">
+              <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-amber-400" />
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-amber-300">
+                    <AlertTriangle className="w-4 h-4 text-amber-700" />
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-amber-900">
                       3. Federal Schedule C — Preparer Exception Item
                     </h4>
                   </div>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-200 text-amber-950 border border-amber-300">
                     {activeOverride ? 'OVERRIDE SAVED' : 'ACTION REQUIRED'}
                   </span>
                 </div>
 
-                <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 text-xs space-y-2">
-                  <div className="font-semibold text-slate-200 flex items-center justify-between">
+                <div className="p-3.5 bg-white rounded-xl border border-amber-200 text-xs space-y-2">
+                  <div className="font-bold text-sage-900 flex items-center justify-between">
                     <span>{currentCase.federalDetails.title}</span>
-                    <span className="font-mono text-purple-400">{currentCase.federalDetails.citation}</span>
+                    <span className="font-mono text-pine-800">{currentCase.federalDetails.citation}</span>
                   </div>
-                  <p className="text-slate-400 leading-relaxed">
+                  <p className="text-sage-700 leading-relaxed">
                     {currentCase.federalDetails.description}
                   </p>
 
                   {/* If override saved, show confirmation card */}
                   {activeOverride && (
-                    <div className="p-2.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs space-y-1">
+                    <div className="p-2.5 rounded-xl bg-lime-100 border border-lime-300 text-pine-900 text-xs space-y-1">
                       <div className="font-bold flex items-center gap-1.5">
                         <Check className="w-3.5 h-3.5" />
                         <span>CPA Override Active: ${activeOverride.amount} Deductible</span>
                       </div>
-                      <p className="text-[11px] text-slate-300 italic">Workpaper Note: "{activeOverride.note}"</p>
+                      <p className="text-[11px] text-sage-700 italic">Workpaper Note: "{activeOverride.note}"</p>
                     </div>
                   )}
 
@@ -404,13 +404,13 @@ export function TaxProfessionalView() {
                           return c;
                         });
                       }}
-                      className="px-3 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition"
+                      className="px-3.5 py-1.5 rounded-xl bg-lime-400 hover:bg-lime-500 text-pine-900 text-xs font-bold transition shadow-xs"
                     >
                       Confirm Default Allocation (${currentCase.federalDetails.defaultDeductible})
                     </button>
                     <button
                       onClick={() => setOverrideActive(!overrideActive)}
-                      className="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition border border-slate-700 flex items-center gap-1"
+                      className="px-3 py-1.5 rounded-xl bg-white hover:bg-sage-100 text-sage-800 text-xs font-semibold transition border border-sage-300 flex items-center gap-1"
                     >
                       <Edit3 className="w-3 h-3" />
                       <span>{overrideActive ? 'Cancel Override' : 'Override Deduction Amount'}</span>
@@ -418,14 +418,14 @@ export function TaxProfessionalView() {
                   </div>
 
                   {overrideActive && (
-                    <div className="mt-3 p-3 bg-slate-900 rounded border border-slate-700 space-y-2">
+                    <div className="mt-3 p-3.5 bg-sage-50 rounded-2xl border border-sage-300 space-y-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-slate-400">New Deductible Amount: $</span>
+                        <span className="text-sage-700 font-semibold">New Deductible Amount: $</span>
                         <input
                           type="text"
                           value={overrideAmount}
                           onChange={(e) => setOverrideAmount(e.target.value)}
-                          className="w-24 px-2 py-1 bg-slate-950 border border-slate-700 rounded text-slate-100 font-mono text-xs focus:outline-none focus:border-blue-500"
+                          className="w-24 px-2 py-1 bg-white border border-sage-300 rounded-lg text-sage-900 font-mono text-xs font-bold focus:outline-none focus:border-pine-700"
                         />
                       </div>
                       <textarea
@@ -433,11 +433,11 @@ export function TaxProfessionalView() {
                         onChange={(e) => setCpaNotes(e.target.value)}
                         placeholder="Mandatory CPA override justification note (e.g. Client provided substantiation showing 100% company-wide employee event exception under IRC § 274(e)(4))..."
                         rows={2}
-                        className="w-full p-2 bg-slate-950 border border-slate-700 rounded text-slate-200 text-xs focus:outline-none focus:border-blue-500"
+                        className="w-full p-2.5 bg-white border border-sage-300 rounded-xl text-sage-900 text-xs focus:outline-none focus:border-pine-700"
                       />
                       <button
                         onClick={handleSaveOverride}
-                        className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-semibold flex items-center gap-1 transition"
+                        className="px-3.5 py-1.5 bg-pine-700 hover:bg-pine-800 text-white rounded-xl text-xs font-bold flex items-center gap-1 transition shadow-xs"
                       >
                         <Save className="w-3 h-3" />
                         <span>Save CPA Override & Audit Workpaper</span>
@@ -448,29 +448,29 @@ export function TaxProfessionalView() {
               </div>
 
               {/* Section 4: Multi-State Non-Conformity */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+              <div className="p-4 rounded-2xl bg-sage-50 border border-sage-200 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">
+                    <CheckCircle2 className="w-4 h-4 text-pine-700" />
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-sage-900">
                       4. State Non-Conformity & Allocation ({currentCase.states.join(' / ')})
                     </h4>
                   </div>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-pine-100 text-pine-800 border border-pine-200">
                     {currentCase.stateDetails.citation}
                   </span>
                 </div>
-                <div className="text-xs font-semibold text-slate-300">{currentCase.stateDetails.title}</div>
-                <p className="text-xs text-slate-400 leading-relaxed">
+                <div className="text-xs font-bold text-sage-900">{currentCase.stateDetails.title}</div>
+                <p className="text-xs text-sage-700 leading-relaxed">
                   {currentCase.stateDetails.description}
                 </p>
               </div>
             </div>
 
             {/* Bottom Actions Bar */}
-            <div className="pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
-              <div className="flex items-center gap-2 text-slate-400">
-                <span className="font-mono">Reviewer PTIN: P01948291</span>
+            <div className="pt-4 border-t border-sage-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2 text-sage-600">
+                <span className="font-mono font-semibold">Reviewer PTIN: P01948291</span>
                 <span>•</span>
                 <span>Workpapers Stored with Cryptographic Audit Digest</span>
               </div>
@@ -479,10 +479,10 @@ export function TaxProfessionalView() {
                 <button 
                   onClick={handleEscalateCase}
                   disabled={isCaseEscalated}
-                  className={`px-3 py-1.5 rounded-lg font-semibold transition border flex items-center gap-1.5 ${
+                  className={`px-3.5 py-2 rounded-2xl font-bold transition border flex items-center gap-1.5 ${
                     isCaseEscalated
-                      ? 'bg-purple-900/40 text-purple-300 border-purple-500/30'
-                      : 'bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 border-amber-500/30'
+                      ? 'bg-pine-100 text-pine-900 border-pine-300'
+                      : 'bg-white hover:bg-sage-100 text-sage-800 border-sage-300'
                   }`}
                 >
                   <Scale className="w-3.5 h-3.5" />
