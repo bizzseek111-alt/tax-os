@@ -19,6 +19,7 @@ export * from './professionalBrief';
 export * from './telemetry';
 export * from './supervisor';
 export * from './dbHelpers';
+export * from './evaluation';
 
 // Agents
 export * from './agents/base';
