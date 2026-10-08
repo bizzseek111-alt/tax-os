@@ -1,0 +1,709 @@
+// Autonomous Tax OS — Production PostgreSQL Schema
+// Workstream Phase 1: Persistence, Identity, Multi-Tenancy, Canonical TaxCase
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum UserRole {
+  TAXPAYER
+  BUSINESS_OWNER
+  CFO
+  CPA
+  EA
+  PAID_PREPARER
+  FEDERAL_REVIEWER
+  STATE_REVIEWER
+  SALES_TAX_REVIEWER
+  PAYROLL_REVIEWER
+  BUSINESS_TAX_REVIEWER
+  SENIOR_REVIEWER
+  ATTORNEY
+  OPERATIONS_MANAGER
+  CASE_MANAGER
+  CUSTOMER_SUPPORT
+  FIRM_ADMIN
+  ORG_ADMIN
+  TAX_KNOWLEDGE_ADMIN
+  SECURITY_ADMIN
+  SUPER_ADMIN
+}
+
+enum SubscriptionTier {
+  PERSONAL_FREE
+  PERSONAL_PRO
+  BUSINESS_CORE
+  FULL_TAX_OS
+  ENTERPRISE_FIRM
+}
+
+enum CaseType {
+  INDIVIDUAL_INCOME
+  BUSINESS_INCOME
+  SALES_TAX
+  PAYROLL_TAX
+  MULTI_DOMAIN_BUSINESS
+}
+
+enum ReviewMode {
+  AI_AUTOPILOT
+  HUMAN_VERIFIED
+  FULL_SERVICE
+}
+
+enum CaseStatus {
+  DRAFT
+  DISCOVERY
+  DOCUMENT_INTAKE
+  NEEDS_YOU
+  CALCULATING
+  READY_FOR_REVIEW
+  IN_REVIEW
+  APPROVED
+  FILED
+  TRANSMITTED
+  ACCEPTED
+  REJECTED
+  ARCHIVED
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum TaxDomain {
+  INCOME_TAX
+  SALES_TAX
+  PAYROLL_TAX
+  EMPLOYER_COMPLIANCE
+}
+
+enum ObligationStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  READY_FOR_CALCULATION
+  CALCULATED
+  REVIEW_PENDING
+  REVIEW_APPROVED
+  TRANSMITTED
+  ACCEPTED
+  REJECTED
+}
+
+enum CredentialType {
+  CPA
+  ENROLLED_AGENT
+  TAX_ATTORNEY
+  CTEC_PREPARER
+  ANNUAL_FILING_SEASON_PROGRAM
+  STAFF_PREPARER
+}
+
+enum CredentialStatus {
+  ACTIVE
+  SUSPENDED
+  EXPIRED
+  PENDING_VERIFICATION
+}
+
+enum AvailabilityStatus {
+  AVAILABLE
+  BUSY
+  AWAY
+  OFFLINE
+}
+
+enum TaskOwnerType {
+  AI
+  TAXPAYER
+  CPA
+  EA
+  PREPARER
+  ATTORNEY
+  SALES_TAX_SPECIALIST
+  PAYROLL_SPECIALIST
+  OPERATIONS
+}
+
+enum TaskStatus {
+  OPEN
+  IN_PROGRESS
+  AWAITING_INPUT
+  PENDING_TAXPAYER
+  ESCALATED
+  RESOLVED
+  DISMISSED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum DocumentType {
+  FORM_W2
+  FORM_1099_NEC
+  FORM_1099_MISC
+  FORM_1099_K
+  FORM_1099_B
+  FORM_1099_DIV
+  FORM_1099_INT
+  FORM_1098_MORTGAGE
+  FORM_1040_PRIOR_YEAR
+  RECEIPT_EXPENSE
+  INVOICE_SALES
+  PAYROLL_REPORT
+  BANK_FEED_CSV
+  RESALE_CERTIFICATE
+  LEGAL_CONTRACT
+  UNKNOWN
+}
+
+enum DocumentStatus {
+  UPLOADED
+  VIRUS_SCANNED
+  PROCESSING
+  PROCESSED
+  VERIFIED
+  DUPLICATE_REMOVED
+  ERROR
+}
+
+enum ExtractionStatus {
+  NOT_STARTED
+  EXTRACTING
+  EXTRACTED
+  FAILED
+}
+
+// ============================================================================
+// IDENTITY & MULTI-TENANCY
+// ============================================================================
+
+model Organization {
+  id               String           @id @default(uuid())
+  name             String
+  slug             String           @unique
+  fein             String?
+  tier             SubscriptionTier @default(FULL_TAX_OS)
+  settings         Json             @default("{}")
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  memberships      OrganizationMembership[]
+  taxCases         TaxCase[]
+  documents        Document[]
+  businessProfiles BusinessProfile[]
+  auditEvents      AuditEvent[]
+  integrations     IntegrationConnection[]
+  accessGrants     PrivilegedPiiAccessGrant[]
+}
+
+model User {
+  id               String           @id @default(uuid())
+  email            String           @unique
+  passwordHash     String
+  fullName         String
+  role             UserRole         @default(TAXPAYER)
+  isMfaEnabled     Boolean          @default(false)
+  mfaSecret        String?
+  emailVerifiedAt  DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  userProfile      UserProfile?
+  professionalProfile ProfessionalProfile?
+  taxpayerProfile  TaxpayerProfile?
+  memberships      OrganizationMembership[]
+  credentials      Credential[]
+  ownedTaxCases    TaxCase[]        @relation("CaseOwner")
+  assignedReviews  ReviewTask[]     @relation("ReviewerAssigned")
+  reviewedCases    ProfessionalReview[]
+  uploadedDocs     Document[]       @relation("DocumentUploader")
+  auditEvents      AuditEvent[]
+  consents         Consent[]
+  piiAccessGrants  PrivilegedPiiAccessGrant[]
+  assignedTasks    TaxTask[]        @relation("TaskOwnerUser")
+}
+
+model UserProfile {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phone              String?
+  addressLine1       String?
+  addressLine2       String?
+  city               String?
+  state              String?
+  postalCode         String?
+  taxResidentState   String?  @default("US-CA")
+  avatarUrl          String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model OrganizationMembership {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           UserRole     @default(TAXPAYER)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([organizationId, userId])
+}
+
+model ProfessionalProfile {
+  id                     String             @id @default(uuid())
+  userId                 String             @unique
+  user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credentialType         CredentialType     @default(CPA)
+  credentialNumber       String
+  credentialStatus       CredentialStatus   @default(ACTIVE)
+  ptin                   String?
+  stateBarOrBoard        String?
+  authorizedJurisdictions String[]          // e.g. ["US-FED", "US-CA", "US-NY"]
+  authorizedTaxDomains   String[]           // e.g. ["INCOME_TAX", "SALES_TAX", "PAYROLL_TAX"]
+  availabilityStatus     AvailabilityStatus @default(AVAILABLE)
+  maxActiveCaseCapacity  Int                @default(25)
+  currentActiveCases     Int                @default(0)
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+}
+
+model Credential {
+  id             String           @id @default(uuid())
+  userId         String
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type           CredentialType
+  identifier     String           // e.g. PTIN P01948291 or CA CPA #129481
+  issuingBody    String           // e.g. "IRS Return Preparer Office", "California Board of Accountancy"
+  status         CredentialStatus @default(ACTIVE)
+  expiresAt      DateTime?
+  verifiedAt     DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+model TaxpayerProfile {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  filingStatus     String   @default("SINGLE") // SINGLE, MARRIED_JOINT, etc.
+  ssnEncrypted     String?
+  ssnLast4         String?
+  occupation       String?
+  dependentsCount  Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model BusinessProfile {
+  id                 String       @id @default(uuid())
+  organizationId     String
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  legalName          String
+  dba                String?
+  entityType         String       // S_CORP, C_CORP, LLC, PARTNERSHIP, SOLE_PROP
+  fein               String?
+  naicsCode          String?
+  incorporationState String?
+  headquartersState  String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+}
+
+// ============================================================================
+// CANONICAL TAX CASE AGGREGATE
+// ============================================================================
+
+model TaxCase {
+  id                      String      @id @default(uuid())
+  organizationId          String
+  organization            Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  ownerId                 String
+  owner                   User        @relation("CaseOwner", fields: [ownerId], references: [id])
+  taxYear                 Int         @default(2026)
+  caseType                CaseType    @default(INDIVIDUAL_INCOME)
+  reviewMode              ReviewMode  @default(HUMAN_VERIFIED)
+  status                  CaseStatus  @default(DRAFT)
+  riskLevel               RiskLevel   @default(LOW)
+  
+  // High-Level Calculation Rollup (Integer Cents)
+  grossIncomeCents        BigInt      @default(0)
+  deductionsCents         BigInt      @default(0)
+  taxableIncomeCents      BigInt      @default(0)
+  federalRefundOrDueCents BigInt      @default(0)
+  stateDueCents           BigInt      @default(0)
+  completionPercent       Int         @default(0)
+  
+  auditHash               String      @default("genesis")
+  createdAt               DateTime    @default(now())
+  updatedAt               DateTime    @updatedAt
+
+  obligations             TaxObligation[]
+  tasks                   TaxTask[]
+  facts                   TaxFact[]
+  positions               TaxPosition[]
+  decisions               TaxDecision[]
+  calculations            TaxCalculation[]
+  reviews                 TaxReview[]
+  professionalReviews     ProfessionalReview[]
+  reviewTasks             ReviewTask[]
+  filings                 TaxFiling[]
+  documents               Document[]
+  evidence                Evidence[]
+  agentRuns               AgentRun[]
+  auditEvents             AuditEvent[]
+  piiAccessGrants         PrivilegedPiiAccessGrant[]
+
+  @@index([organizationId, taxYear])
+  @@index([ownerId])
+  @@index([status])
+}
+
+model TaxObligation {
+  id                 String           @id @default(uuid())
+  taxCaseId          String
+  taxCase            TaxCase          @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  taxDomain          TaxDomain
+  jurisdictionCode   String           // e.g. "US-FED", "US-CA", "CA-CDTFA", "PAYROLL-FED"
+  period             String           // e.g. "2026-ANNUAL", "2026-Q1"
+  status             ObligationStatus @default(NOT_STARTED)
+  ruleSetVersion     String           @default("2026.1")
+  calculationVersion String?
+  reviewStatus       String           @default("PENDING")
+  filingStatus       String           @default("UNFILED")
+  dueDate            DateTime
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  tasks              TaxTask[]
+  positions          TaxPosition[]
+  reviewTasks        ReviewTask[]
+  filings            TaxFiling[]
+
+  @@unique([taxCaseId, jurisdictionCode, period])
+  @@index([jurisdictionCode])
+}
+
+model TaxJurisdiction {
+  code               String   @id // e.g. "US-FED", "US-CA", "US-NY"
+  name               String
+  country            String   @default("US")
+  level              String   // FEDERAL, STATE, LOCAL, SPECIAL_DISTRICT
+  authorityName      String   // IRS, FTB, NYS-DTF, CDTFA
+  portalUrl          String?
+  createdAt          DateTime @default(now())
+}
+
+model TaxTask {
+  id                   String        @id @default(uuid())
+  taxCaseId            String
+  taxCase              TaxCase       @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  taxObligationId      String?
+  taxObligation        TaxObligation? @relation(fields: [taxObligationId], references: [id], onDelete: SetNull)
+  taskType             String
+  ownerType            TaskOwnerType @default(TAXPAYER)
+  ownerId              String?
+  ownerUser            User?         @relation("TaskOwnerUser", fields: [ownerId], references: [id])
+  status               TaskStatus    @default(PENDING_TAXPAYER)
+  priority             TaskPriority  @default(MEDIUM)
+  reason               String
+  financialImpactCents BigInt?
+  requiredEvidence     Json          @default("[]")
+  resolutionChoice     String?
+  resolvedAt           DateTime?
+  auditRecordHash      String
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  @@index([taxCaseId, status])
+}
+
+model TaxFact {
+  id                 String   @id @default(uuid())
+  taxCaseId          String
+  taxCase            TaxCase  @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  category           String   // INCOME, EXPENSE, DEDUCTION, ASSET
+  key                String   // e.g. "w2_box1_wages", "schedule_c_software_aws"
+  valueCents         BigInt?
+  valueString        String?
+  sourceDocumentId   String?
+  confidence         Float    @default(1.0)
+  isVerified         Boolean  @default(false)
+  verifiedByUserId   String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  evidence           Evidence[]
+
+  @@index([taxCaseId, key])
+}
+
+model TaxPosition {
+  id                 String         @id @default(uuid())
+  taxCaseId          String
+  taxCase            TaxCase        @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  taxObligationId    String?
+  taxObligation      TaxObligation? @relation(fields: [taxObligationId], references: [id], onDelete: SetNull)
+  positionType       String         // DEDUCTION, DEPRECIATION, EXEMPTION
+  statutoryCitation  String         // e.g. "26 U.S.C. § 162(a)"
+  amountCents        BigInt
+  rationale          String
+  riskScore          Float          @default(0.0)
+  status             String         @default("PROPOSED") // PROPOSED, CONFIRMED, REJECTED
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  decisions          TaxDecision[]
+  reviewTasks        ReviewTask[]
+  evidence           Evidence[]
+
+  @@index([taxCaseId])
+}
+
+model TaxDecision {
+  id             String      @id @default(uuid())
+  taxCaseId      String
+  taxCase        TaxCase     @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  taxPositionId  String?
+  taxPosition    TaxPosition? @relation(fields: [taxPositionId], references: [id], onDelete: SetNull)
+  deciderType    String      // "AI_CONSENSUS", "CPA_OVERRIDE", "ATTORNEY_MEMO"
+  deciderId      String
+  decisionAction String      // "APPROVED", "ADJUSTED", "DISALLOWED"
+  rationale      String
+  auditHash      String
+  createdAt      DateTime    @default(now())
+}
+
+model TaxCalculation {
+  id              String   @id @default(uuid())
+  taxCaseId       String
+  taxCase         TaxCase  @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  engineVersion   String
+  calculationHash String
+  inputsHash      String
+  outputsJson     Json
+  isOfficial      Boolean  @default(true)
+  createdAt       DateTime @default(now())
+}
+
+model TaxReview {
+  id              String     @id @default(uuid())
+  taxCaseId       String
+  taxCase         TaxCase    @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  reviewMode      ReviewMode @default(HUMAN_VERIFIED)
+  status          String     @default("PENDING")
+  findings        Json       @default("[]")
+  recommendations Json       @default("[]")
+  completedAt     DateTime?
+  createdAt       DateTime   @default(now())
+}
+
+model ProfessionalReview {
+  id             String    @id @default(uuid())
+  taxCaseId      String
+  taxCase        TaxCase   @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  reviewerId     String
+  reviewer       User      @relation(fields: [reviewerId], references: [id])
+  ptin           String
+  jurisdiction   String
+  domain         TaxDomain
+  overrideCount  Int       @default(0)
+  signoffHash    String
+  signedAt       DateTime?
+  createdAt      DateTime  @default(now())
+}
+
+model ReviewTask {
+  id                 String         @id @default(uuid())
+  taxCaseId          String
+  taxCase            TaxCase        @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  taxObligationId    String?
+  taxObligation      TaxObligation? @relation(fields: [taxObligationId], references: [id], onDelete: SetNull)
+  taxPositionId      String?
+  taxPosition        TaxPosition?   @relation(fields: [taxPositionId], references: [id], onDelete: SetNull)
+  jurisdiction       String         // e.g. "US-CA"
+  taxDomain          TaxDomain
+  requiredRole       UserRole       @default(CPA)
+  assignedUserId     String?
+  assignedUser       User?          @relation("ReviewerAssigned", fields: [assignedUserId], references: [id])
+  riskLevel          RiskLevel      @default(LOW)
+  materialityCents   BigInt         @default(0)
+  status             String         @default("PENDING_ROUTING") // PENDING_ROUTING, IN_REVIEW, APPROVED, ESCALATED
+  deadline           DateTime
+  decision           Json?
+  notes              String?
+  createdAt          DateTime       @default(now())
+  completedAt        DateTime?
+
+  @@index([taxCaseId, status])
+  @@index([assignedUserId])
+  @@index([jurisdiction, taxDomain])
+}
+
+model TaxFiling {
+  id                 String         @id @default(uuid())
+  taxCaseId          String
+  taxCase            TaxCase        @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  taxObligationId    String?
+  taxObligation      TaxObligation? @relation(fields: [taxObligationId], references: [id], onDelete: SetNull)
+  formIdentifier     String         // e.g. "Form 1040", "Form 540", "CDTFA-401"
+  submissionId       String?        @unique
+  transmissionHash   String?
+  status             String         @default("DRAFT") // DRAFT, SIGNED, TRANSMITTED, ACCEPTED, REJECTED
+  acceptanceCode     String?
+  submittedAt        DateTime?
+  acknowledgedAt     DateTime?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+}
+
+// ============================================================================
+// DOCUMENTS, EVIDENCE & AUDIT
+// ============================================================================
+
+model Document {
+  id               String           @id @default(uuid())
+  organizationId   String
+  organization     Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  taxCaseId        String?
+  taxCase          TaxCase?         @relation(fields: [taxCaseId], references: [id], onDelete: SetNull)
+  ownerId          String
+  owner            User             @relation("DocumentUploader", fields: [ownerId], references: [id])
+  filename         String
+  mimeType         String
+  sizeBytes        BigInt
+  storageKey       String           // Key in S3 or local vault
+  sha256           String           // True cryptographic SHA-256
+  documentType     DocumentType     @default(UNKNOWN)
+  taxYear          Int              @default(2026)
+  status           DocumentStatus   @default(UPLOADED)
+  extractionStatus ExtractionStatus @default(NOT_STARTED)
+  duplicateOfId    String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  evidence         Evidence[]
+
+  @@index([organizationId])
+  @@index([taxCaseId])
+  @@index([sha256])
+}
+
+model Evidence {
+  id             String      @id @default(uuid())
+  taxCaseId      String
+  taxCase        TaxCase     @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  documentId     String?
+  document       Document?   @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  factId         String?
+  fact           TaxFact?    @relation(fields: [factId], references: [id], onDelete: SetNull)
+  positionId     String?
+  position       TaxPosition? @relation(fields: [positionId], references: [id], onDelete: SetNull)
+  relationType   String      // "SUBSTANTIATES", "PROVES_LINE", "ATTRIBUTES_INCOME"
+  hash           String
+  createdAt      DateTime    @default(now())
+}
+
+model AgentRun {
+  id               String   @id @default(uuid())
+  taxCaseId        String
+  taxCase          TaxCase  @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  agentName        String
+  modelVersion     String
+  promptTokens     Int      @default(0)
+  completionTokens Int      @default(0)
+  costUsd          Float    @default(0.0)
+  latencyMs        Int      @default(0)
+  toolInvocations  Json     @default("[]")
+  finalVerdict     Json
+  signatureHash    String
+  createdAt        DateTime @default(now())
+}
+
+model AuditEvent {
+  id               String       @id @default(uuid())
+  sequence         BigInt       @default(autoincrement())
+  timestamp        DateTime     @default(now())
+  actorId          String
+  actor            User         @relation(fields: [actorId], references: [id])
+  actorRole        UserRole
+  actorType        String       // "USER", "AGENT", "SYSTEM"
+  organizationId   String
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  taxCaseId        String?
+  taxCase          TaxCase?     @relation(fields: [taxCaseId], references: [id], onDelete: SetNull)
+  action           String       // e.g. "MUTATE_TAX_POSITION", "UNMASK_PII", "SUBMIT_EFILE"
+  objectType       String
+  objectId         String
+  previousValue    Json?
+  newValue         Json?
+  reason           String?
+  requestId        String?
+  blockHash        String       // Real SHA-256 block hash
+  previousBlockHash String
+
+  @@index([organizationId])
+  @@index([taxCaseId])
+  @@index([sequence])
+}
+
+model Consent {
+  id             String    @id @default(uuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  consentType    String    // "CIRCULAR_230", "IRC_7216_DISCLOSURE", "TERMS_OF_SERVICE"
+  consentText    String
+  ipAddress      String?
+  userAgent      String?
+  agreedAt       DateTime  @default(now())
+  revokedAt      DateTime?
+}
+
+model IntegrationConnection {
+  id                   String       @id @default(uuid())
+  organizationId       String
+  organization         Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  provider             String       // "PLAID", "STRIPE", "GUSTO", "SHOPIFY"
+  status               String       @default("CONNECTED")
+  authPayloadEncrypted String?
+  lastSyncedAt         DateTime?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+}
+
+model PrivilegedPiiAccessGrant {
+  id             String       @id @default(uuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  taxCaseId      String
+  taxCase        TaxCase      @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  targetRecordId String
+  reason         String
+  authFactorUsed String       // "PASSWORD_REAUTH", "WEBAUTHN_FIDO2", "TOTP"
+  grantedAt      DateTime     @default(now())
+  expiresAt      DateTime     // Strictly 15 minutes after grantedAt
+  revokedAt      DateTime?
+  auditEventId   String?
+}
