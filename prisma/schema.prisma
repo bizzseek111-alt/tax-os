@@ -262,6 +262,7 @@ model Organization {
   financialConnections FinancialConnection[]
   resolvedEntities ResolvedEntity[]
   ingestionJobs    IngestionJob[]
+  agentMemories    AgentMemory[]
 }
 
 model User {
@@ -427,6 +428,7 @@ model TaxCase {
   transactions            Transaction[]
   ingestionJobs           IngestionJob[]
   calculationRuns         TaxCalculationRun[]
+  corrections             ProfessionalCorrection[]
 
   @@index([organizationId, taxYear])
   @@index([ownerId])
@@ -455,6 +457,7 @@ model TaxObligation {
   filings            TaxFiling[]
   facts              TaxFact[]
   calculationRuns    TaxCalculationRun[]
+  agentRuns          AgentRun[]
 
   @@unique([taxCaseId, jurisdictionCode, period])
   @@index([jurisdictionCode])
@@ -533,12 +536,20 @@ model TaxPosition {
   taxCase            TaxCase        @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
   taxObligationId    String?
   taxObligation      TaxObligation? @relation(fields: [taxObligationId], references: [id], onDelete: SetNull)
-  positionType       String         // DEDUCTION, DEPRECIATION, EXEMPTION
+  positionType       String         // DEDUCTION, CREDIT, INCOME_ADJUSTMENT, EXEMPTION
+  category           String         @default("GENERAL") // SCHEDULE_C, HOME_OFFICE, VEHICLE, QBI, RETIREMENT, etc.
+  title              String         @default("Tax Position")
   statutoryCitation  String         // e.g. "26 U.S.C. § 162(a)"
   amountCents        BigInt
   rationale          String
   riskScore          Float          @default(0.0)
-  status             String         @default("PROPOSED") // PROPOSED, CONFIRMED, REJECTED
+  confidence         Float          @default(1.0)
+  status             String         @default("PROPOSED") // PROPOSED, INVESTIGATING, AWAITING_FACT, RULE_VERIFIED, EVIDENCE_VERIFIED, CHALLENGED, APPROVED, REJECTED, PRO_REVIEW, FINAL
+  ruleRefs           Json           @default("[]")
+  evidenceRefs       Json           @default("[]")
+  challengerNotes    String?
+  proReviewNotes     String?
+  sourceAgent        String?
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
 
@@ -546,7 +557,8 @@ model TaxPosition {
   reviewTasks        ReviewTask[]
   evidence           Evidence[]
 
-  @@index([taxCaseId])
+  @@index([taxCaseId, status])
+  @@index([category])
 }
 
 model TaxDecision {
@@ -763,19 +775,42 @@ model Evidence {
 }
 
 model AgentRun {
-  id               String   @id @default(uuid())
-  taxCaseId        String
-  taxCase          TaxCase  @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
-  agentName        String
-  modelVersion     String
-  promptTokens     Int      @default(0)
-  completionTokens Int      @default(0)
-  costUsd          Float    @default(0.0)
-  latencyMs        Int      @default(0)
-  toolInvocations  Json     @default("[]")
-  finalVerdict     Json
-  signatureHash    String
-  createdAt        DateTime @default(now())
+  id                   String         @id @default(uuid())
+  agentType            String         @default("INTAKE_AGENT")
+  agentVersion         String         @default("1.0.0")
+  taxCaseId            String
+  taxCase              TaxCase        @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  taxObligationId      String?
+  taxObligation        TaxObligation? @relation(fields: [taxObligationId], references: [id], onDelete: SetNull)
+  status               String         @default("SUCCESS") // SUCCESS, PARTIAL, RETRYABLE_FAILURE, PERMANENT_FAILURE, BLOCKED_MISSING_DATA, BLOCKED_RULE_UNCERTAINTY, PRO_REVIEW_REQUIRED
+  modelProvider        String         @default("INTERNAL_DETERMINISTIC") // "GOOGLE", "OPENAI", "ANTHROPIC", "INTERNAL_DETERMINISTIC"
+  modelName            String         @default("taxos-deterministic-v1")
+  inputRefs            Json           @default("[]")
+  outputRefs           Json           @default("[]")
+  toolCalls            Json           @default("[]")
+  confidence           Float          @default(1.0)
+  startedAt            DateTime       @default(now())
+  completedAt          DateTime?
+  retryCount           Int            @default(0)
+  error                String?
+  humanOverride        Json?
+  costMetadata         Json           @default("{}")
+  ruleSetVersion       String?        @default("2026.1")
+  finalVerdict         Json?
+  signatureHash        String?
+  createdAt            DateTime       @default(now())
+
+  // Backwards compatibility fields
+  agentName            String?
+  modelVersion         String?
+  promptTokens         Int            @default(0)
+  completionTokens     Int            @default(0)
+  costUsd              Float          @default(0.0)
+  latencyMs            Int            @default(0)
+  toolInvocations      Json           @default("[]")
+
+  @@index([taxCaseId, agentType])
+  @@index([status])
 }
 
 model AuditEvent {
@@ -1127,4 +1162,46 @@ model CitationVerificationRecord {
 
   @@index([citationCode, jurisdiction, taxYear])
 }
+
+// ============================================================================
+// AGENT MEMORY & PROFESSIONAL CORRECTION LEARNING (PHASE 5)
+// ============================================================================
+
+model AgentMemory {
+  id               String       @id @default(uuid())
+  organizationId   String
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  category         String       // TAXPAYER_PATTERN, PROFESSIONAL_CORRECTION, MERCHANT_IDENTITY, CLASSIFICATION_PATTERN
+  taxYear          Int?
+  key              String       // e.g. "merchant:AMZN_MKTP" or "taxpayer:standard_mileage_election"
+  value            Json
+  confidence       Float        @default(1.0)
+  sourceAgent      String?
+  verifiedByUserId String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@unique([organizationId, category, key])
+  @@index([organizationId, category])
+}
+
+model ProfessionalCorrection {
+  id                   String       @id @default(uuid())
+  taxCaseId            String
+  taxCase              TaxCase      @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  agentRunId           String?
+  taxPositionId        String?
+  originalProposal     Json
+  professionalDecision Json
+  reason               String
+  ruleRefs             Json         @default("[]")
+  caseContext          Json         @default("{}")
+  reviewerId           String
+  reviewerRole         String
+  createdAt            DateTime     @default(now())
+
+  @@index([taxCaseId])
+  @@index([reviewerId])
+}
+
 

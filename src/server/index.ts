@@ -41,6 +41,16 @@ import { TaxCitationValidator } from './services/taxAuthority/validation/citatio
 import { TaxRuleExplanationService } from './services/taxAuthority/explanation/explainRule';
 import { TaxLawWatcher } from './services/taxAuthority/watcher/taxLawWatcher';
 import { TaxAuthorityProviderRegistry } from './services/taxAuthority/providers';
+import {
+  TaxCaseSupervisor,
+  DeductionHunterAgent,
+  IrsChallengerAgent,
+  FederalTaxAgent,
+  ProfessionalReviewBriefAgent,
+  ProfessionalCorrectionLearning,
+  AgentTelemetryService,
+  AgentType
+} from './agent-runtime';
 
 // Port configuration
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
@@ -1178,6 +1188,153 @@ export async function handleApiRequest(req: http.IncomingMessage, res: http.Serv
       });
 
       sendJson(res, 200, { success: true, analysis });
+      return true;
+    }
+
+    // ==========================================
+    // WORKSTREAM 5: AGENT RUNTIME ENDPOINTS
+    // ==========================================
+
+    // Execute full supervisor pipeline for a TaxCase
+    if (url === '/api/agents/pipeline/run' && method === 'POST') {
+      const auth = await getRequestContext(req);
+      const body = await parseJsonBody(req);
+      const { taxCaseId, taxYear, hasScheduleC, jurisdictions } = body;
+
+      if (!taxCaseId) {
+        sendJson(res, 400, { error: 'taxCaseId is required' });
+        return true;
+      }
+
+      const supervisor = new TaxCaseSupervisor();
+      const result = await supervisor.execute(
+        {
+          organizationId: auth.organizationId,
+          taxCaseId,
+          actorUserId: auth.user.id,
+          taxYear: taxYear || 2026,
+          prisma
+        },
+        {
+          taxCaseId,
+          organizationId: auth.organizationId,
+          userId: auth.user.id,
+          taxYear: taxYear || 2026,
+          hasScheduleC: hasScheduleC ?? true,
+          jurisdictions: jurisdictions || ['US-FED']
+        }
+      );
+
+      sendJson(res, 200, { success: true, result });
+      return true;
+    }
+
+    // Case Status & Pending Tasks
+    if (url?.match(/^\/api\/agents\/case\/([a-zA-Z0-9_-]+)\/status$/) && method === 'GET') {
+      const match = url.match(/^\/api\/agents\/case\/([a-zA-Z0-9_-]+)\/status$/);
+      const caseId = match![1];
+
+      const taxCase = await prisma.taxCase.findUnique({
+        where: { id: caseId },
+        include: {
+          positions: true,
+          tasks: true,
+          reviewTasks: true,
+          agentRuns: { take: 10, orderBy: { startedAt: 'desc' } }
+        }
+      });
+
+      if (!taxCase) {
+        sendJson(res, 404, { error: 'TaxCase not found' });
+        return true;
+      }
+
+      sendJson(res, 200, {
+        success: true,
+        caseId,
+        status: taxCase.status,
+        reviewMode: taxCase.reviewMode,
+        positionsCount: taxCase.positions.length,
+        pendingReviewTasksCount: taxCase.reviewTasks.filter((t: any) => t.status === 'PENDING').length,
+        recentAgentRuns: taxCase.agentRuns
+      });
+      return true;
+    }
+
+    // Case Proposed / Verified Positions
+    if (url?.match(/^\/api\/agents\/case\/([a-zA-Z0-9_-]+)\/positions$/) && method === 'GET') {
+      const match = url.match(/^\/api\/agents\/case\/([a-zA-Z0-9_-]+)\/positions$/);
+      const caseId = match![1];
+
+      const positions = await prisma.taxPosition.findMany({
+        where: { taxCaseId: caseId },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      sendJson(res, 200, { success: true, caseId, positions });
+      return true;
+    }
+
+    // Professional Review Brief
+    if (url?.match(/^\/api\/agents\/case\/([a-zA-Z0-9_-]+)\/brief$/) && method === 'GET') {
+      const auth = await getRequestContext(req);
+      const match = url.match(/^\/api\/agents\/case\/([a-zA-Z0-9_-]+)\/brief$/);
+      const caseId = match![1];
+
+      const briefAgent = new ProfessionalReviewBriefAgent();
+      const briefResult = await briefAgent.execute(
+        {
+          organizationId: auth.organizationId,
+          taxCaseId: caseId,
+          actorUserId: auth.user.id,
+          taxYear: 2026,
+          prisma
+        },
+        {
+          taxCaseId: caseId,
+          taxpayerName: 'Taxpayer Profile',
+          taxYear: 2026,
+          returnType: 'FORM_1040'
+        }
+      );
+
+      sendJson(res, 200, { success: true, brief: briefResult.result });
+      return true;
+    }
+
+    // Professional Override & Learning
+    if (url?.match(/^\/api\/agents\/case\/([a-zA-Z0-9_-]+)\/override$/) && method === 'POST') {
+      const auth = await getRequestContext(req);
+      const match = url.match(/^\/api\/agents\/case\/([a-zA-Z0-9_-]+)\/override$/);
+      const caseId = match![1];
+      const body = await parseJsonBody(req);
+
+      const correction = await ProfessionalCorrectionLearning.recordCorrection(prisma, {
+        organizationId: auth.organizationId,
+        taxCaseId: caseId,
+        taxPositionId: body.taxPositionId,
+        agentType: body.agentType || AgentType.DEDUCTION_HUNTER,
+        taxYear: body.taxYear || 2026,
+        originalProposal: body.originalProposal || {},
+        professionalDecision: body.professionalDecision || {},
+        reason: body.reason || 'Professional override by credentialed CPA.',
+        ruleRefs: body.ruleRefs || ['IRC § 162'],
+        userId: auth.user.id
+      });
+
+      sendJson(res, 200, { success: true, correction });
+      return true;
+    }
+
+    // Telemetry & Activity Feed
+    if (url?.startsWith('/api/agents/telemetry') && method === 'GET') {
+      const parsedUrl = new URL(url, `http://${req.headers.host || 'localhost'}`);
+      const caseId = parsedUrl.searchParams.get('taxCaseId') || undefined;
+
+      const summary = await AgentTelemetryService.getTelemetrySummary(caseId);
+      const feed = caseId ? await AgentTelemetryService.getActivityFeed(caseId) : [];
+
+      sendJson(res, 200, { success: true, summary, feed });
       return true;
     }
 
