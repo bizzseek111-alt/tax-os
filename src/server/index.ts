@@ -54,6 +54,7 @@ import {
 import { handleReviewApiRequest } from './review-operations/reviewRouter';
 import { handleSalesTaxApiRequest } from './sales-tax/salesTaxRouter';
 import { handlePayrollApiRequest } from './payroll/payrollRouter';
+import { handleFilingApiRequest } from './filing/filingRouter';
 
 // Port configuration
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
@@ -1366,6 +1367,15 @@ export async function handleApiRequest(req: http.IncomingMessage, res: http.Serv
       const auth = await getRequestContext(req);
       const handledPayroll = await handlePayrollApiRequest(req, res, auth);
       if (handledPayroll) return true;
+    }
+
+    // ------------------------------------------------------------------------
+    // PHASE 9: ELECTRONIC FILING, AUTHORIZATION & TRANSMISSION ROUTER
+    // ------------------------------------------------------------------------
+    if (url.startsWith('/api/v1/filing')) {
+      const auth = await getRequestContext(req);
+      const handledFiling = await handleFilingApiRequest(req, res, auth);
+      if (handledFiling) return true;
     }
 
     // Fallback for unhandled /api route

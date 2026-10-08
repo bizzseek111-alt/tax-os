@@ -475,6 +475,12 @@ model TaxCase {
   payrollLiabilities         PayrollTaxLiability[]
   payrollReturns            PayrollReturn[]
   payrollReconciliations    PayrollReconciliation[]
+  returnVersions            ReturnVersion[]
+  filingSubmissions         FilingSubmission[]
+  taxpayerAuthorizations    TaxpayerAuthorization[]
+  filingPayments            FilingPayment[]
+  filingExtensions          FilingExtension[]
+  amendmentCases            AmendmentCase[]
 
   @@index([organizationId, taxYear])
   @@index([ownerId])
@@ -507,6 +513,7 @@ model TaxObligation {
   salesTaxReturns    SalesTaxReturn[]
   payrollLiabilities PayrollTaxLiability[]
   payrollReturns     PayrollReturn[]
+  filingSubmissions  FilingSubmission[]
 
   @@unique([taxCaseId, jurisdictionCode, period])
   @@index([jurisdictionCode])
@@ -2655,4 +2662,291 @@ model PayrollReconciliation {
 
   @@index([employerId, period])
 }
+
+// ============================================================================
+// PHASE 9: TAXPAYER AUTHORIZATION, E-SIGNATURE, RETURN PACKAGING,
+// E-FILE SUBMISSION, ACKNOWLEDGMENTS, REJECTIONS, PAYMENTS & AMENDMENTS
+// ============================================================================
+
+enum FilingStatus {
+  DRAFT
+  CALCULATING
+  NEEDS_INFORMATION
+  NEEDS_REVIEW
+  PROFESSIONALLY_REVIEWED
+  READY_FOR_CUSTOMER_REVIEW
+  CUSTOMER_REVIEWED
+  SIGNATURE_REQUIRED
+  AUTHORIZED
+  READY_FOR_TRANSMISSION
+  QUEUED_FOR_TRANSMISSION
+  TRANSMITTED
+  ACKNOWLEDGED
+  ACCEPTED
+  REJECTED
+  CORRECTION_REQUIRED
+  AMENDED
+  WITHDRAWN
+  CLOSED
+}
+
+enum SignatureStatus {
+  PENDING
+  VIEWED
+  SIGNED
+  DECLINED
+  EXPIRED
+  INVALIDATED
+}
+
+enum FilingSubmissionStatus {
+  QUEUED
+  SENDING
+  SENT
+  ACK_PENDING
+  ACK_RECEIVED
+  ACCEPTED
+  REJECTED
+  FAILED
+  RETRY_REQUIRED
+}
+
+enum AcknowledgmentStatus {
+  ACCEPTED
+  REJECTED
+  PENDING
+  PROCESSING
+  DUPLICATE
+  ERROR
+}
+
+model ReturnVersion {
+  id                 String           @id @default(uuid())
+  taxCaseId          String
+  taxCase            TaxCase          @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  versionNumber      Int              @default(1)
+  taxYear            Int              @default(2026)
+  jurisdictions      String[]
+  forms              String[]
+  calculationRunIds  String[]
+  ruleSetVersions    String[]
+  factsSnapshot      Json
+  positionsSnapshot  Json?
+  reviewVersion      String           @default("1.0")
+  isSigned           Boolean          @default(false)
+  isValidated        Boolean          @default(false)
+  validationErrors   String[]         @default([])
+  packagePayload     Json?
+  xmlPayload         String?
+  pdfDocumentId      String?
+  hash               String           // Canonical SHA-256
+  filingStatus       FilingStatus     @default(DRAFT)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  signatureRequests  SignatureRequest[]
+  submissions        FilingSubmission[]
+  authorizations     TaxpayerAuthorization[]
+  originalAmendments AmendmentCase[]  @relation("OriginalReturnVersion")
+  amendedAmendments  AmendmentCase[]  @relation("AmendedReturnVersion")
+
+  @@index([taxCaseId, versionNumber])
+  @@index([hash])
+}
+
+model SignatureRequest {
+  id              String          @id @default(uuid())
+  returnVersionId String
+  returnVersion   ReturnVersion   @relation(fields: [returnVersionId], references: [id], onDelete: Cascade)
+  signerRole      String          // "PRIMARY_TAXPAYER", "SPOUSE", "ERO_PREPARER"
+  signerName      String
+  signerEmail     String
+  signerUserId    String?
+  signatureType   String          @default("FORM_8879") // "ELECTRONIC_PIN", "DIGITAL_SIGNATURE", "DOCUSIGN_ENVELOPE", "FORM_8879"
+  status          SignatureStatus @default(PENDING)
+  requestedAt     DateTime        @default(now())
+  viewedAt        DateTime?
+  signedAt        DateTime?
+  ipAddress       String?
+  userAgent       String?
+  signatureHash   String?
+  pin             String?
+  consentRecordId String?
+  envelopeId      String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  events          SignatureEvent[]
+
+  @@index([returnVersionId, status])
+  @@index([signerEmail])
+}
+
+model SignatureEvent {
+  id                 String           @id @default(uuid())
+  signatureRequestId String
+  signatureRequest   SignatureRequest @relation(fields: [signatureRequestId], references: [id], onDelete: Cascade)
+  eventType          String           // "REQUESTED", "VIEWED", "PIN_ENTERED", "SIGNED", "DECLINED", "INVALIDATED"
+  ipAddress          String?
+  userAgent          String?
+  metadata           Json?
+  timestamp          DateTime         @default(now())
+
+  @@index([signatureRequestId, eventType])
+}
+
+model TaxpayerAuthorization {
+  id                     String        @id @default(uuid())
+  taxCaseId              String
+  taxCase                TaxCase       @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  returnVersionId        String
+  returnVersion          ReturnVersion @relation(fields: [returnVersionId], references: [id], onDelete: Cascade)
+  authorizationType      String        @default("FORM_8879") // "FORM_8879", "STATE_AUTHORIZATION", "PAYMENT_AUTHORIZATION", "DISCLOSURE_CONSENT_7216"
+  isAuthorized           Boolean       @default(true)
+  authorizedByUserId     String
+  authorizedByName       String
+  authorizedAt           DateTime      @default(now())
+  ipAddress              String
+  scope                  String        @default("FEDERAL_AND_STATE_EFILE")
+  disclosureConsentGiven Boolean       @default(true)
+  signatureHash          String
+  form8879Data           Json?
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+
+  @@index([taxCaseId, returnVersionId])
+}
+
+model FilingSubmission {
+  id                        String                 @id @default(uuid())
+  returnVersionId           String
+  returnVersion             ReturnVersion          @relation(fields: [returnVersionId], references: [id], onDelete: Cascade)
+  taxObligationId           String?
+  taxObligation             TaxObligation?         @relation(fields: [taxObligationId], references: [id], onDelete: SetNull)
+  taxCaseId                 String
+  taxCase                   TaxCase                @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  jurisdiction              String                 // "US-FED", "US-CA", "US-NY", "US-NJ", "US-IL", "US-MA"
+  provider                  String                 @default("SANDBOX_MEF")
+  environment               String                 @default("SANDBOX") // "DEMO", "SANDBOX", "CERTIFICATION", "PRODUCTION"
+  submissionType            String                 @default("ORIGINAL") // "ORIGINAL", "AMENDED", "EXTENSION", "ESTIMATED_PAYMENT"
+  idempotencyKey            String                 @unique
+  transmissionId            String?
+  payloadHash               String
+  schemaVersion             String                 @default("2026v1.0")
+  status                    FilingSubmissionStatus @default(QUEUED)
+  retryCount                Int                    @default(0)
+  submittedAt               DateTime?
+  acknowledgedAt            DateTime?
+  acknowledgmentId          String?
+  errorCode                 String?
+  errorMessage              String?
+  createdAt                 DateTime               @default(now())
+  updatedAt                 DateTime               @updatedAt
+
+  acknowledgments           FilingAcknowledgment[]
+  rejections                FilingRejection[]
+
+  @@index([returnVersionId, status])
+  @@index([taxCaseId, jurisdiction])
+}
+
+model FilingAcknowledgment {
+  id                     String               @id @default(uuid())
+  submissionId           String
+  submission             FilingSubmission     @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  agencyAcknowledgmentId String?
+  status                 AcknowledgmentStatus @default(ACCEPTED)
+  receivedAt             DateTime             @default(now())
+  rawXmlOrJson           String
+  normalizedDetails      Json?
+  createdAt              DateTime             @default(now())
+
+  @@index([submissionId, status])
+}
+
+model FilingRejection {
+  id                          String           @id @default(uuid())
+  submissionId                String
+  submission                  FilingSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  agency                      String           @default("IRS")
+  jurisdiction                String
+  rejectCode                  String           // e.g. "R0000-500-01"
+  category                    String           @default("GENERAL_REJECT")
+  rawMessage                  String
+  customerFriendlyExplanation String
+  professionalExplanation     String
+  fieldOrFormReference        String?
+  resolutionStatus            String           @default("UNRESOLVED") // "UNRESOLVED", "TASK_CREATED", "RESOLVED", "WAIVED"
+  reviewTaskId                String?
+  createdAt                   DateTime         @default(now())
+  updatedAt                   DateTime         @updatedAt
+
+  @@index([submissionId, rejectCode])
+  @@index([resolutionStatus])
+}
+
+model AmendmentCase {
+  id                      String        @id @default(uuid())
+  taxCaseId               String
+  taxCase                 TaxCase       @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  originalReturnVersionId String
+  originalReturnVersion   ReturnVersion @relation("OriginalReturnVersion", fields: [originalReturnVersionId], references: [id], onDelete: Cascade)
+  amendedReturnVersionId  String?
+  amendedReturnVersion    ReturnVersion? @relation("AmendedReturnVersion", fields: [amendedReturnVersionId], references: [id], onDelete: SetNull)
+  reason                  String
+  explanationOfChanges    String
+  changedFactKeys         String[]
+  taxDifferenceCents      BigInt        @default(0)
+  status                  String        @default("DRAFT") // DRAFT, REVIEWED, SIGNED, TRANSMITTED, ACCEPTED
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+
+  @@index([taxCaseId, status])
+}
+
+model FilingPayment {
+  id                         String    @id @default(uuid())
+  taxCaseId                  String
+  taxCase                    TaxCase   @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  submissionId               String?
+  paymentType                String    @default("DIRECT_DEBIT_EFW") // "DIRECT_DEBIT_EFW", "REFUND_DIRECT_DEPOSIT", "ESTIMATED_TAX_PAYMENT"
+  jurisdiction               String    @default("US-FED")
+  amountCents                BigInt    @default(0)
+  bankRoutingMasked          String    // "XXXX0123"
+  bankAccountMasked          String    // "XXXXX6789"
+  bankAccountType            String    @default("CHECKING") // "CHECKING", "SAVINGS"
+  accountHolderNameEncrypted String?
+  bankRoutingEncrypted       String?
+  bankAccountEncrypted       String?
+  scheduledDebitDate         DateTime?
+  isAuthorized               Boolean   @default(true)
+  authorizedAt               DateTime  @default(now())
+  status                     String    @default("AUTHORIZED") // AUTHORIZED, SUBMITTED, CLEARED, FAILED
+  confirmationNumber         String?
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+
+  @@index([taxCaseId, status])
+}
+
+model FilingExtension {
+  id                         String    @id @default(uuid())
+  taxCaseId                  String
+  taxCase                    TaxCase   @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  formType                   String    @default("FORM_4868") // "FORM_4868" (Individual), "FORM_7004" (Corporate)
+  taxYear                    Int       @default(2026)
+  originalDueDate            DateTime
+  extendedDueDate            DateTime
+  estimatedTotalTaxCents     BigInt    @default(0)
+  totalPaymentsCents         BigInt    @default(0)
+  paymentWithExtensionCents  BigInt    @default(0)
+  status                     String    @default("DRAFT") // DRAFT, SUBMITTED, ACCEPTED, REJECTED
+  confirmationNumber         String?
+  submittedAt                DateTime?
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+
+  @@index([taxCaseId, status])
+}
+
 

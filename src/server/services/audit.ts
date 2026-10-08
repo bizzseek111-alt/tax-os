@@ -48,12 +48,17 @@ export class AuditEventService {
     const nextSequence = latestEvent ? latestEvent.sequence + 1n : 1n;
     const timestamp = new Date();
 
+    const validRoles = Object.values(UserRole) as string[];
+    const resolvedRole = validRoles.includes(input.actorRole as string)
+      ? input.actorRole
+      : UserRole.SUPER_ADMIN;
+
     // 2. Compute canonical SHA-256 block hash
     const blockPayload = [
       nextSequence.toString(),
       previousBlockHash,
       input.actorId,
-      input.actorRole,
+      resolvedRole,
       input.action,
       input.objectType,
       input.objectId,
@@ -72,7 +77,7 @@ export class AuditEventService {
         timestamp,
         organizationId: input.organizationId,
         actorId: input.actorId,
-        actorRole: input.actorRole,
+        actorRole: resolvedRole,
         actorType: input.actorType || 'USER',
         taxCaseId: input.taxCaseId,
         action: input.action,
