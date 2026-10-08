@@ -31,6 +31,9 @@ import { FinancialService } from './services/financial/FinancialService';
 import { IngestionQueueService } from './queue/queue';
 import { CaseStatus, ReviewMode, UserRole } from '@prisma/client';
 import { KillSwitchManager } from '../agent-os/KillSwitchManager';
+import { CalculationRunService } from './services/taxCalculation/calculationRunService';
+import { CalculationLineageService } from './services/taxCalculation/lineage';
+import { FormMappingService } from './services/taxCalculation/formMapping';
 
 // Port configuration
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
@@ -187,7 +190,7 @@ export async function handleApiRequest(req: http.IncomingMessage, res: http.Serv
     // ------------------------------------------------------------------------
     // CANONICAL TAXCASE
     // ------------------------------------------------------------------------
-    if (url.startsWith('/api/taxcase') && method === 'GET') {
+    if ((url === '/api/taxcase' || url.startsWith('/api/taxcase?')) && method === 'GET') {
       const context = await getRequestContext(req);
       const urlObj = new URL(url, `http://${req.headers.host}`);
       const caseIdParam = urlObj.searchParams.get('caseId');
@@ -267,6 +270,123 @@ export async function handleApiRequest(req: http.IncomingMessage, res: http.Serv
           context.user.role
         );
         sendJson(res, 200, { success: true, taxCase: updated });
+      } catch (err: any) {
+        sendJson(res, 400, { error: err.message });
+      }
+      return true;
+    }
+
+    // ------------------------------------------------------------------------
+    // DETERMINISTIC TAX CALCULATION & LINEAGE ("Prove This Number")
+    // ------------------------------------------------------------------------
+
+    // Route: POST /api/taxcase/:id/calculate
+    if (url.match(/^\/api\/taxcase\/[^\/]+\/calculate$/) && method === 'POST') {
+      const context = await getRequestContext(req);
+      const caseId = url.split('/')[3];
+      const data = await parseJsonBody(req);
+
+      try {
+        const result = await CalculationRunService.executeAndPersistRun(
+          caseId,
+          data.taxObligationId,
+          data.inputOverride
+        );
+        sendJson(res, 200, { success: true, result });
+      } catch (err: any) {
+        sendJson(res, 400, { error: err.message });
+      }
+      return true;
+    }
+
+    // Route: GET /api/taxcase/:id/calculation/runs
+    if (url.match(/^\/api\/taxcase\/[^\/]+\/calculation\/runs$/) && method === 'GET') {
+      const context = await getRequestContext(req);
+      const caseId = url.split('/')[3];
+
+      try {
+        const runs = await prisma.taxCalculationRun.findMany({
+          where: { taxCaseId: caseId },
+          orderBy: { createdAt: 'desc' },
+          take: 20
+        });
+        sendJson(res, 200, { success: true, runs });
+      } catch (err: any) {
+        sendJson(res, 400, { error: err.message });
+      }
+      return true;
+    }
+
+    // Route: GET /api/taxcase/:id/calculation/lineage/:field
+    if (url.match(/^\/api\/taxcase\/[^\/]+\/calculation\/lineage\/[^\/]+$/) && method === 'GET') {
+      const context = await getRequestContext(req);
+      const parts = url.split('/');
+      const caseId = parts[3];
+      const field = decodeURIComponent(parts[6]);
+
+      try {
+        const latestRun = await prisma.taxCalculationRun.findFirst({
+          where: { taxCaseId: caseId },
+          orderBy: { createdAt: 'desc' }
+        });
+
+        if (!latestRun) {
+          sendJson(res, 404, { error: `No calculation runs found for tax case ${caseId}` });
+          return true;
+        }
+
+        const outputSnapshot = latestRun.outputSnapshot as any;
+        const explanation = CalculationLineageService.explainNumber(
+          {
+            federal: {
+              lineage: outputSnapshot?.lineage || {},
+              formLineBreakdown: outputSnapshot?.formLineBreakdown || {},
+            },
+            states: [],
+          } as any,
+          field
+        );
+
+        if (!explanation) {
+          sendJson(res, 404, { error: `Lineage node not found for field: ${field}` });
+          return true;
+        }
+
+        sendJson(res, 200, { success: true, explanation });
+      } catch (err: any) {
+        sendJson(res, 400, { error: err.message });
+      }
+      return true;
+    }
+
+    // Route: POST /api/taxcase/:id/calculation/compare
+    if (url.match(/^\/api\/taxcase\/[^\/]+\/calculation\/compare$/) && method === 'POST') {
+      const context = await getRequestContext(req);
+      const caseId = url.split('/')[3];
+      const data = await parseJsonBody(req);
+      const { runAId, runBId } = data;
+
+      try {
+        const comparison = await CalculationRunService.compareCalculationRuns(runAId, runBId);
+        sendJson(res, 200, { success: true, comparison });
+      } catch (err: any) {
+        sendJson(res, 400, { error: err.message });
+      }
+      return true;
+    }
+
+    // Route: POST /api/taxcase/:id/tax-twin/simulate
+    if (url.match(/^\/api\/taxcase\/[^\/]+\/tax-twin\/simulate$/) && method === 'POST') {
+      const context = await getRequestContext(req);
+      const caseId = url.split('/')[3];
+      const data = await parseJsonBody(req);
+
+      try {
+        const simulation = await CalculationRunService.simulateTaxTwinScenario(
+          caseId,
+          data.overrides || {}
+        );
+        sendJson(res, 200, { success: true, simulation });
       } catch (err: any) {
         sendJson(res, 400, { error: err.message });
       }

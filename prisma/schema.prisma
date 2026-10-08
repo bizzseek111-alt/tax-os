@@ -426,6 +426,7 @@ model TaxCase {
   piiAccessGrants         PrivilegedPiiAccessGrant[]
   transactions            Transaction[]
   ingestionJobs           IngestionJob[]
+  calculationRuns         TaxCalculationRun[]
 
   @@index([organizationId, taxYear])
   @@index([ownerId])
@@ -453,6 +454,7 @@ model TaxObligation {
   reviewTasks        ReviewTask[]
   filings            TaxFiling[]
   facts              TaxFact[]
+  calculationRuns    TaxCalculationRun[]
 
   @@unique([taxCaseId, jurisdictionCode, period])
   @@index([jurisdictionCode])
@@ -571,6 +573,50 @@ model TaxCalculation {
   outputsJson     Json
   isOfficial      Boolean  @default(true)
   createdAt       DateTime @default(now())
+}
+
+model TaxCalculationRun {
+  id                 String         @id @default(uuid())
+  taxCaseId          String
+  taxCase            TaxCase        @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  taxObligationId    String?
+  taxObligation      TaxObligation? @relation(fields: [taxObligationId], references: [id])
+  jurisdiction       String         @default("US-FED")
+  taxYear            Int            @default(2026)
+  engineVersion      String         @default("2026.1.0-alpha")
+  ruleSetVersion     String         @default("2026.Q1")
+  provider           String         @default("INTERNAL_DETERMINISTIC")
+  inputSnapshotHash  String
+  inputSnapshot      Json
+  outputSnapshot     Json
+  outputHash         String
+  status             String         @default("COMPLETED") // COMPLETED, FAILED, UNSUPPORTED
+  startedAt          DateTime       @default(now())
+  completedAt        DateTime?
+  errors             Json           @default("[]")
+  warnings           Json           @default("[]")
+  createdAt          DateTime       @default(now())
+
+  @@index([taxCaseId, jurisdiction, taxYear])
+  @@index([inputSnapshotHash])
+}
+
+model TaxParameter {
+  id             String    @id @default(uuid())
+  key            String
+  jurisdiction   String    // "US-FED", "US-CA", "US-NY", "US-NJ", "US-IL", "US-MA"
+  taxYear        Int       @default(2026)
+  value          Json
+  effectiveFrom  DateTime
+  effectiveTo    DateTime?
+  sourceRef      String    // Statutory citation, e.g. "26 U.S.C. § 1", "Cal. RTC § 17041"
+  version        String    @default("2026.1")
+  status         String    @default("ACTIVE")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([key, jurisdiction, taxYear, version])
+  @@index([jurisdiction, taxYear])
 }
 
 model TaxReview {

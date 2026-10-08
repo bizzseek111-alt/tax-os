@@ -1,8 +1,15 @@
 /**
- * Autonomous Tax OS — Deterministic Tax Calculation Engine
- * Workstream 9: Zero-hallucination integer-cents tax calculation engine.
- * Covers Form 1040, Schedule C, Schedule SE, Form 8995 QBI, and 5 Launch States (CA, NY, NJ, IL, MA).
+ * Autonomous Tax OS — Deterministic Tax Calculation Adapter
+ * Workstream 3: Phase 3
+ * 
+ * Bridges client/legacy interface directly to the Phase 3 authoritative
+ * deterministic FederalTaxEngine and State modules.
+ * Eliminates all mock/hardcoded heuristics (e.g. 15% assumed refund, crude flat rates).
  */
+
+import { FederalTaxEngine } from '../server/services/taxCalculation/federalEngine';
+import { getStateTaxModule } from '../server/services/taxCalculation/states';
+import { FilingStatus, FederalTaxInput, StateTaxInput } from '../server/services/taxCalculation/types';
 
 export interface TaxCalculationInput {
   taxYear: number;
@@ -47,121 +54,103 @@ export class TaxCalculationEngine {
       throw new Error(`TaxCalculationEngine strictly anchored to tax year 2026. Given: ${input.taxYear}`);
     }
 
-    // 1. Schedule C Net Profit
-    const scheduleCNetProfitCents = Math.max(0, input.scheduleCGrossCents - input.scheduleCExpensesCents);
+    const filingStatus: FilingStatus =
+      input.filingStatus === 'MARRIED_JOINT' ? 'MARRIED_FILING_JOINTLY' : input.filingStatus;
 
-    // 2. Schedule SE (Self-Employment Tax)
-    // 92.35% of net profit is subject to 15.3% SE tax
-    const seEarningsCents = Math.round(scheduleCNetProfitCents * 0.9235);
-    const selfEmploymentTaxCents = Math.round(seEarningsCents * 0.153);
-    const deductibleSeTaxCents = Math.round(selfEmploymentTaxCents * 0.5);
+    // Convert input numbers to BigInt cents
+    const fedInput: FederalTaxInput = {
+      taxYear: 2026,
+      filingStatus,
+      taxpayerName: 'Taxpayer',
+      w2s: input.w2WagesCents > 0 ? [{
+        employerName: 'Primary Employer',
+        employerEin: '00-0000000',
+        wagesCents: BigInt(input.w2WagesCents),
+        federalWithholdingCents: 0n,
+      }] : [],
+      scheduleC: input.scheduleCGrossCents > 0 ? {
+        businessName: 'Consulting Practice',
+        grossReceiptsCents: BigInt(input.scheduleCGrossCents),
+        expenses: {
+          supplies: BigInt(input.scheduleCExpensesCents),
+        },
+      } : undefined,
+      adjustments: input.hsaContributionCents > 0 ? {
+        hsaDeductionCents: BigInt(input.hsaContributionCents),
+      } : undefined,
+      payments: {
+        estimatedTaxPaymentsCents: 0n,
+      },
+      residentStates: [input.residentState],
+    };
 
-    // 3. Federal AGI
-    // AGI = W-2 + Net Schedule C - 50% SE Tax - HSA Deduction
-    const adjustedGrossIncomeCents = 
-      input.w2WagesCents + 
-      scheduleCNetProfitCents - 
-      deductibleSeTaxCents - 
-      input.hsaContributionCents;
+    // Authoritative Federal calculation
+    const fedResult = FederalTaxEngine.calculate(fedInput);
 
-    // 4. Standard Deduction (2026 Single: $15,000; Married Joint: $30,000)
-    const standardDeductionCents = input.filingStatus === 'MARRIED_JOINT' ? 3000000 : 1500000;
-
-    // 5. Qualified Business Income (QBI) Deduction (IRC § 199A)
-    // 20% of net Schedule C profit (subject to taxable income limits)
-    const qbiDeductionCents = Math.round(scheduleCNetProfitCents * 0.20);
-
-    // 6. Federal Taxable Income
-    const taxableIncomeCents = Math.max(0, adjustedGrossIncomeCents - standardDeductionCents - qbiDeductionCents);
-
-    // 7. Federal Income Tax (2026 Brackets Simulation)
-    let federalTaxCents = 0;
-    if (taxableIncomeCents <= 1192500) {
-      federalTaxCents = Math.round(taxableIncomeCents * 0.10);
-    } else if (taxableIncomeCents <= 4847500) {
-      federalTaxCents = 119250 + Math.round((taxableIncomeCents - 1192500) * 0.12);
-    } else if (taxableIncomeCents <= 10335000) {
-      federalTaxCents = 557850 + Math.round((taxableIncomeCents - 4847500) * 0.22);
-    } else {
-      federalTaxCents = 1765100 + Math.round((taxableIncomeCents - 10335000) * 0.24);
+    // Authoritative State calculation
+    const stateModule = getStateTaxModule(input.residentState);
+    if (!stateModule) {
+      throw new Error(`Unsupported state jurisdiction: ${input.residentState}`);
     }
 
-    const totalFederalTaxCents = federalTaxCents + selfEmploymentTaxCents;
-    const assumedFederalWithholdingCents = Math.round(totalFederalTaxCents * 1.15); // Refund state
-    const federalRefundOrDueCents = assumedFederalWithholdingCents - totalFederalTaxCents;
+    const stateInput: StateTaxInput = {
+      jurisdiction: input.residentState,
+      taxYear: 2026,
+      residencyStatus: 'FULL_YEAR_RESIDENT',
+      w2s: fedInput.w2s,
+      scheduleC: fedInput.scheduleC,
+      federalAgiCents: fedResult.adjustedGrossIncomeCents,
+      federalTaxableIncomeCents: fedResult.taxableIncomeCents,
+      stateWithholdingCents: 0n,
+      stateEstimatedPaymentsCents: 0n,
+      pensionIncomeCents: input.pensionIncomeCents,
+      highEarnerNetGainCents: input.highEarnerNetGainCents ? BigInt(input.highEarnerNetGainCents) : undefined,
+      customAdditionsCents: (input.residentState === 'US-CA' && input.hsaContributionCents > 0)
+        ? BigInt(input.hsaContributionCents)
+        : 0n,
+    };
 
-    // 8. Sovereign State Calculation
-    let stateTaxableIncomeCents = taxableIncomeCents;
-    let stateTaxCents = 0;
-
-    switch (input.residentState) {
-      case 'US-CA': {
-        // California does not conform to HSA deduction (Cal. RTC § 17215.4) or 20% QBI
-        stateTaxableIncomeCents = taxableIncomeCents + input.hsaContributionCents + qbiDeductionCents;
-        stateTaxCents = Math.round(stateTaxableIncomeCents * 0.093); // Top marginal rate on consulting
-        break;
-      }
-      case 'US-NY': {
-        // New York IT-201
-        stateTaxableIncomeCents = taxableIncomeCents + qbiDeductionCents;
-        stateTaxCents = Math.round(stateTaxableIncomeCents * 0.0685);
-        break;
-      }
-      case 'US-NJ': {
-        // New Jersey NJ-1040
-        stateTaxableIncomeCents = taxableIncomeCents + qbiDeductionCents;
-        stateTaxCents = Math.round(stateTaxableIncomeCents * 0.0637);
-        break;
-      }
-      case 'US-IL': {
-        // Illinois IL-1040: Flat 4.95% rate; 100% pension subtraction under 35 ILCS 5/203
-        const pensionSub = input.pensionIncomeCents || 0;
-        stateTaxableIncomeCents = Math.max(0, taxableIncomeCents - pensionSub);
-        stateTaxCents = Math.round(stateTaxableIncomeCents * 0.0495);
-        break;
-      }
-      case 'US-MA': {
-        // Massachusetts Form 1: 5.0% flat rate + 4.0% Fair Share Surtax on income over $1,000,000
-        stateTaxableIncomeCents = taxableIncomeCents;
-        const baseTax = Math.round(stateTaxableIncomeCents * 0.05);
-        const highEarnerExcess = Math.max(0, (input.highEarnerNetGainCents || stateTaxableIncomeCents) - 100000000);
-        const surtax = Math.round(highEarnerExcess * 0.04);
-        stateTaxCents = baseTax + surtax;
-        break;
-      }
-    }
-
-    const stateRefundOrDueCents = -stateTaxCents; // Assume due
+    const stateResult = stateModule.calculate(stateInput, filingStatus);
 
     const formLineBreakdown: Record<string, number> = {
-      'Form 1040 Line 1z (W-2 Wages)': input.w2WagesCents,
-      'Schedule C Line 29 (Net Profit)': scheduleCNetProfitCents,
-      'Form 1040 Line 9 (Total Income)': input.w2WagesCents + scheduleCNetProfitCents,
-      'Form 1040 Line 11 (AGI)': adjustedGrossIncomeCents,
-      'Form 1040 Line 12 (Standard Deduction)': standardDeductionCents,
-      'Form 1040 Line 13 (QBI Deduction)': qbiDeductionCents,
-      'Form 1040 Line 15 (Taxable Income)': taxableIncomeCents,
-      'Form 1040 Line 23 (Other Taxes SE)': selfEmploymentTaxCents,
-      'Form 1040 Line 24 (Total Tax)': totalFederalTaxCents
+      'Form 1040 Line 1z (W-2 Wages)': Number(fedResult.w2WagesTotalCents),
+      'Schedule C Line 31 (Net Profit)': Number(fedResult.scheduleCNetProfitCents),
+      'Form 1040 Line 9 (Total Income)': Number(fedResult.totalIncomeCents),
+      'Form 1040 Line 11 (AGI)': Number(fedResult.adjustedGrossIncomeCents),
+      'Form 1040 Line 12 (Standard Deduction)': Number(fedResult.allowedDeductionCents),
+      'Form 1040 Line 13 (QBI Deduction)': Number(fedResult.qbi.allowedQbiDeductionCents),
+      'Form 1040 Line 15 (Taxable Income)': Number(fedResult.taxableIncomeCents),
+      'Form 1040 Line 16 (Regular Tax)': Number(fedResult.incomeTaxCents),
+      'Form 1040 Line 23 (Other Taxes SE)': Number(fedResult.selfEmployment.totalSelfEmploymentTaxCents),
+      'Form 1040 Line 24 (Total Tax)': Number(fedResult.totalFederalTaxCents),
     };
+
+    // Signed settlement: negative means balance due
+    const federalRefundOrDueCents = fedResult.refundCents > 0n
+      ? Number(fedResult.refundCents)
+      : -Number(fedResult.balanceDueCents);
+
+    const stateRefundOrDueCents = stateResult.stateRefundCents > 0n
+      ? Number(stateResult.stateRefundCents)
+      : -Number(stateResult.stateBalanceDueCents);
 
     return {
       taxYear: 2026,
       filingStatus: input.filingStatus,
-      scheduleCNetProfitCents,
-      selfEmploymentTaxCents,
-      deductibleSeTaxCents,
-      qbiDeductionCents,
-      adjustedGrossIncomeCents,
-      standardDeductionCents,
-      taxableIncomeCents,
-      totalFederalTaxCents,
+      scheduleCNetProfitCents: Number(fedResult.scheduleCNetProfitCents),
+      selfEmploymentTaxCents: Number(fedResult.selfEmployment.totalSelfEmploymentTaxCents),
+      deductibleSeTaxCents: Number(fedResult.selfEmployment.deductibleSeTaxCents),
+      qbiDeductionCents: Number(fedResult.qbi.allowedQbiDeductionCents),
+      adjustedGrossIncomeCents: Number(fedResult.adjustedGrossIncomeCents),
+      standardDeductionCents: Number(fedResult.allowedDeductionCents),
+      taxableIncomeCents: Number(fedResult.taxableIncomeCents),
+      totalFederalTaxCents: Number(fedResult.totalFederalTaxCents),
       federalRefundOrDueCents,
       stateJurisdiction: input.residentState,
-      stateTaxableIncomeCents,
-      stateTaxCents,
+      stateTaxableIncomeCents: Number(stateResult.stateTaxableIncomeCents),
+      stateTaxCents: Number(stateResult.netStateTaxCents),
       stateRefundOrDueCents,
-      formLineBreakdown
+      formLineBreakdown,
     };
   }
 }

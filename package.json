@@ -11,7 +11,8 @@
     "seed": "tsx prisma/seed.ts",
     "test:phase1": "tsx src/tests/phase1_verification.ts",
     "test:phase2": "tsx src/tests/phase2_verification.ts",
-    "test": "tsx src/tests/phase1_verification.ts"
+    "test:phase3": "tsx src/tests/phase3_verification.ts",
+    "test": "tsx src/tests/phase3_verification.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
