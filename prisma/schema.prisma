@@ -1,5 +1,5 @@
 // Autonomous Tax OS — Production PostgreSQL Schema
-// Workstream Phase 1: Persistence, Identity, Multi-Tenancy, Canonical TaxCase
+// Workstream Phase 1 & 2: Persistence, Identity, Ingestion, Financial Connectivity, Evidence Graph
 
 datasource db {
   provider = "postgresql"
@@ -163,11 +163,20 @@ enum DocumentType {
   FORM_1099_DIV
   FORM_1099_INT
   FORM_1098_MORTGAGE
+  FORM_1098_E
+  FORM_1098_T
   FORM_1040_PRIOR_YEAR
+  SCHEDULE_C
+  SCHEDULE_D
+  SCHEDULE_E
+  SCHEDULE_K1
   RECEIPT_EXPENSE
   INVOICE_SALES
   PAYROLL_REPORT
   BANK_FEED_CSV
+  BANK_STATEMENT
+  CREDIT_CARD_STATEMENT
+  BROKERAGE_STATEMENT
   RESALE_CERTIFICATE
   LEGAL_CONTRACT
   UNKNOWN
@@ -181,6 +190,45 @@ enum DocumentStatus {
   VERIFIED
   DUPLICATE_REMOVED
   ERROR
+}
+
+enum DocumentProcessingState {
+  UPLOADED
+  SCANNING
+  QUEUED
+  CLASSIFYING
+  EXTRACTING
+  NORMALIZING
+  VALIDATING
+  MATCHING
+  READY
+  NEEDS_REVIEW
+  FAILED
+  DUPLICATE
+}
+
+enum DuplicateType {
+  EXACT_DUPLICATE
+  PROBABLE_DUPLICATE
+  RELATED_DOCUMENT
+}
+
+enum FactValidationStatus {
+  EXTRACTED
+  VALIDATED
+  CONFLICTED
+  USER_CONFIRMED
+  PROFESSIONAL_CONFIRMED
+  REJECTED
+}
+
+enum EvidenceType {
+  DOCUMENT
+  FINANCIAL_ACCOUNT
+  TRANSACTION
+  USER_CONFIRMATION
+  PROFESSIONAL_CONFIRMATION
+  DERIVED
 }
 
 enum ExtractionStatus {
@@ -211,6 +259,9 @@ model Organization {
   auditEvents      AuditEvent[]
   integrations     IntegrationConnection[]
   accessGrants     PrivilegedPiiAccessGrant[]
+  financialConnections FinancialConnection[]
+  resolvedEntities ResolvedEntity[]
+  ingestionJobs    IngestionJob[]
 }
 
 model User {
@@ -238,6 +289,7 @@ model User {
   consents         Consent[]
   piiAccessGrants  PrivilegedPiiAccessGrant[]
   assignedTasks    TaxTask[]        @relation("TaskOwnerUser")
+  financialConnections FinancialConnection[]
 }
 
 model UserProfile {
@@ -372,6 +424,8 @@ model TaxCase {
   agentRuns               AgentRun[]
   auditEvents             AuditEvent[]
   piiAccessGrants         PrivilegedPiiAccessGrant[]
+  transactions            Transaction[]
+  ingestionJobs           IngestionJob[]
 
   @@index([organizationId, taxYear])
   @@index([ownerId])
@@ -398,6 +452,7 @@ model TaxObligation {
   positions          TaxPosition[]
   reviewTasks        ReviewTask[]
   filings            TaxFiling[]
+  facts              TaxFact[]
 
   @@unique([taxCaseId, jurisdictionCode, period])
   @@index([jurisdictionCode])
@@ -438,23 +493,36 @@ model TaxTask {
 }
 
 model TaxFact {
-  id                 String   @id @default(uuid())
-  taxCaseId          String
-  taxCase            TaxCase  @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
-  category           String   // INCOME, EXPENSE, DEDUCTION, ASSET
-  key                String   // e.g. "w2_box1_wages", "schedule_c_software_aws"
-  valueCents         BigInt?
-  valueString        String?
-  sourceDocumentId   String?
-  confidence         Float    @default(1.0)
-  isVerified         Boolean  @default(false)
-  verifiedByUserId   String?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                   String               @id @default(uuid())
+  taxCaseId            String
+  taxCase              TaxCase              @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  taxObligationId      String?
+  taxObligation        TaxObligation?       @relation(fields: [taxObligationId], references: [id], onDelete: SetNull)
+  category             String               // INCOME, EXPENSE, DEDUCTION, ASSET, WITHHOLDING
+  factType             String               @default("GENERAL") // W2_WAGES, 1099_NEC_COMP, MORTGAGE_INTEREST
+  key                  String               // e.g. "w2_box1_wages", "schedule_c_software_aws"
+  valueCents           BigInt?
+  valueString          String?
+  normalizedValue      Json?
+  unit                 String?
+  taxYear              Int?
+  jurisdiction         String?
+  sourceDocumentId     String?
+  sourcePage           Int?
+  sourceRegion         Json?
+  extractionProvider   String?
+  confidence           Float                @default(1.0)
+  validationStatus     FactValidationStatus @default(VALIDATED)
+  conflictDetails      Json?
+  isVerified           Boolean              @default(false)
+  verifiedByUserId     String?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
 
-  evidence           Evidence[]
+  evidence             Evidence[]
 
   @@index([taxCaseId, key])
+  @@index([validationStatus])
 }
 
 model TaxPosition {
@@ -581,46 +649,71 @@ model TaxFiling {
 // ============================================================================
 
 model Document {
-  id               String           @id @default(uuid())
-  organizationId   String
-  organization     Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  taxCaseId        String?
-  taxCase          TaxCase?         @relation(fields: [taxCaseId], references: [id], onDelete: SetNull)
-  ownerId          String
-  owner            User             @relation("DocumentUploader", fields: [ownerId], references: [id])
-  filename         String
-  mimeType         String
-  sizeBytes        BigInt
-  storageKey       String           // Key in S3 or local vault
-  sha256           String           // True cryptographic SHA-256
-  documentType     DocumentType     @default(UNKNOWN)
-  taxYear          Int              @default(2026)
-  status           DocumentStatus   @default(UPLOADED)
-  extractionStatus ExtractionStatus @default(NOT_STARTED)
-  duplicateOfId    String?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  id                 String                  @id @default(uuid())
+  organizationId     String
+  organization       Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  taxCaseId          String?
+  taxCase            TaxCase?                @relation(fields: [taxCaseId], references: [id], onDelete: SetNull)
+  ownerId            String
+  owner              User                    @relation("DocumentUploader", fields: [ownerId], references: [id])
+  documentFamilyId   String                  @default(uuid())
+  version            Int                     @default(1)
+  filename           String
+  originalFilename   String                  @default("")
+  mimeType           String
+  sizeBytes          BigInt
+  storageKey         String                  // Key in S3 or local vault
+  sha256             String                  // True cryptographic SHA-256
+  documentType       DocumentType            @default(UNKNOWN)
+  taxYear            Int                     @default(2026)
+  status             DocumentStatus          @default(UPLOADED)
+  processingState    DocumentProcessingState @default(UPLOADED)
+  extractionStatus   ExtractionStatus        @default(NOT_STARTED)
+  scanStatus         String                  @default("CLEAN")
+  duplicateOfId      String?
+  duplicateType      DuplicateType?
+  duplicateConfidence Float?
+  duplicateReason    String?
+  ocrRaw             Json?
+  ocrNormalizedText  String?
+  ocrMetadata        Json?
+  processingError    String?
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
 
-  evidence         Evidence[]
+  evidence           Evidence[]
 
   @@index([organizationId])
   @@index([taxCaseId])
   @@index([sha256])
+  @@index([documentFamilyId, version])
+  @@index([processingState])
 }
 
 model Evidence {
-  id             String      @id @default(uuid())
-  taxCaseId      String
-  taxCase        TaxCase     @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
-  documentId     String?
-  document       Document?   @relation(fields: [documentId], references: [id], onDelete: SetNull)
-  factId         String?
-  fact           TaxFact?    @relation(fields: [factId], references: [id], onDelete: SetNull)
-  positionId     String?
-  position       TaxPosition? @relation(fields: [positionId], references: [id], onDelete: SetNull)
-  relationType   String      // "SUBSTANTIATES", "PROVES_LINE", "ATTRIBUTES_INCOME"
-  hash           String
-  createdAt      DateTime    @default(now())
+  id                   String        @id @default(uuid())
+  taxCaseId            String
+  taxCase              TaxCase       @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  evidenceType         EvidenceType  @default(DOCUMENT)
+  documentId           String?
+  document             Document?     @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  factId               String?
+  fact                 TaxFact?      @relation(fields: [factId], references: [id], onDelete: SetNull)
+  positionId           String?
+  position             TaxPosition?  @relation(fields: [positionId], references: [id], onDelete: SetNull)
+  transactionId        String?
+  transaction          Transaction?  @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+  financialAccountId   String?
+  financialAccount     FinancialAccount? @relation(fields: [financialAccountId], references: [id], onDelete: SetNull)
+  relationType         String        // "SUBSTANTIATES", "PROVES_LINE", "ATTRIBUTES_INCOME", "FINGERPRINT_MATCH"
+  hash                 String
+  confidence           Float         @default(1.0)
+  createdBy            String?
+  createdAt            DateTime      @default(now())
+
+  @@index([taxCaseId])
+  @@index([documentId])
+  @@index([factId])
 }
 
 model AgentRun {
@@ -651,7 +744,7 @@ model AuditEvent {
   organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   taxCaseId        String?
   taxCase          TaxCase?     @relation(fields: [taxCaseId], references: [id], onDelete: SetNull)
-  action           String       // e.g. "MUTATE_TAX_POSITION", "UNMASK_PII", "SUBMIT_EFILE"
+  action           String       // e.g. "MUTATE_TAX_POSITION", "UNMASK_PII", "SUBMIT_EFILE", "OCR_EXTRACTED"
   objectType       String
   objectId         String
   previousValue    Json?
@@ -671,7 +764,7 @@ model Consent {
   userId         String
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   organizationId String
-  consentType    String    // "CIRCULAR_230", "IRC_7216_DISCLOSURE", "TERMS_OF_SERVICE"
+  consentType    String    // "CIRCULAR_230", "IRC_7216_DISCLOSURE", "PLAID_CONNECTION", "TERMS_OF_SERVICE"
   consentText    String
   ipAddress      String?
   userAgent      String?
@@ -706,4 +799,133 @@ model PrivilegedPiiAccessGrant {
   expiresAt      DateTime     // Strictly 15 minutes after grantedAt
   revokedAt      DateTime?
   auditEventId   String?
+}
+
+// ============================================================================
+// FINANCIAL CONNECTIVITY & TRANSACTIONS (PHASE 2)
+// ============================================================================
+
+model FinancialConnection {
+  id                     String             @id @default(uuid())
+  organizationId         String
+  organization           Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId                 String
+  user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider               String             // "PLAID", "STRIPE", "SANDBOX"
+  providerConnectionId   String
+  institutionId          String?
+  institutionName        String
+  status                 String             @default("CONNECTED") // CONNECTED, DEGRADED, DISCONNECTED, ERROR
+  encryptedAccessToken   String?
+  lastSyncedAt           DateTime?
+  scopes                 Json               @default("[]")
+  consentVersion         String?
+  consentedAt            DateTime           @default(now())
+  revokedAt              DateTime?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  accounts               FinancialAccount[]
+
+  @@unique([organizationId, provider, providerConnectionId])
+  @@index([organizationId])
+}
+
+model FinancialAccount {
+  id                 String              @id @default(uuid())
+  connectionId       String
+  connection         FinancialConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  organizationId     String
+  providerAccountId  String
+  accountName        String
+  accountType        String              // depository, credit, loan, investment
+  accountSubtype     String?             // checking, savings, credit card
+  mask               String?             // e.g. "6789"
+  currency           String              @default("USD")
+  currentBalanceCents BigInt?
+  availableBalanceCents BigInt?
+  status             String              @default("ACTIVE")
+  lastSyncedAt       DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  transactions       Transaction[]
+  evidence           Evidence[]
+
+  @@unique([connectionId, providerAccountId])
+  @@index([organizationId])
+}
+
+model Transaction {
+  id                     String            @id @default(uuid())
+  accountId              String
+  account                FinancialAccount  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  organizationId         String
+  taxCaseId              String?
+  taxCase                TaxCase?          @relation(fields: [taxCaseId], references: [id], onDelete: SetNull)
+  providerTransactionId  String?
+  date                   DateTime
+  authorizedDate         DateTime?
+  rawMerchant            String?
+  normalizedMerchant     String?
+  description            String
+  amountCents            BigInt
+  currency               String            @default("USD")
+  direction              String            // DEBIT, CREDIT
+  rawCategory            Json              @default("[]")
+  normalizedCategory     String?
+  isPending              Boolean           @default(false)
+  source                 String            // "PLAID", "CSV_IMPORT", "STRIPE"
+  fingerprint            String            // SHA-256 duplicate fingerprint
+  duplicateOfId          String?
+  isDuplicate            Boolean           @default(false)
+  duplicateConfidence    Float?
+  duplicateReason        String?
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+
+  evidence               Evidence[]
+
+  @@index([organizationId, date])
+  @@index([fingerprint])
+}
+
+model ResolvedEntity {
+  id                 String       @id @default(uuid())
+  organizationId     String
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  entityType         String       // "EMPLOYER", "PAYER", "MERCHANT", "FINANCIAL_INSTITUTION", "BUSINESS_ENTITY"
+  name               String
+  normalizedName     String
+  tinOrEinEncrypted  String?
+  tinLast4           String?
+  confidence         Float        @default(1.0)
+  metadata           Json         @default("{}")
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  @@index([organizationId, normalizedName])
+}
+
+model IngestionJob {
+  id                 String       @id @default(uuid())
+  jobType            String       // DOCUMENT_UPLOAD_RECEIVED, FINANCIAL_ACCOUNT_SYNC, etc.
+  taxCaseId          String?
+  taxCase            TaxCase?     @relation(fields: [taxCaseId], references: [id], onDelete: SetNull)
+  organizationId     String
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  documentId         String?
+  status             String       @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED, DEAD_LETTER
+  attemptCount       Int          @default(0)
+  maxAttempts        Int          @default(3)
+  payload            Json
+  result             Json?
+  errorDetails       Json?
+  auditReference     String?
+  startedAt          DateTime?
+  completedAt        DateTime?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  @@index([organizationId, status])
 }
