@@ -52,6 +52,7 @@ import {
   AgentType
 } from './agent-runtime';
 import { handleReviewApiRequest } from './review-operations/reviewRouter';
+import { handleSalesTaxApiRequest } from './sales-tax/salesTaxRouter';
 
 // Port configuration
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
@@ -1346,6 +1347,15 @@ export async function handleApiRequest(req: http.IncomingMessage, res: http.Serv
       const auth = await getRequestContext(req);
       const handledReview = await handleReviewApiRequest(req, res, auth);
       if (handledReview) return true;
+    }
+
+    // ------------------------------------------------------------------------
+    // PHASE 7: SALES & USE TAX ENGINE ROUTER
+    // ------------------------------------------------------------------------
+    if (url.startsWith('/api/v1/sales-tax')) {
+      const auth = await getRequestContext(req);
+      const handledSalesTax = await handleSalesTaxApiRequest(req, res, auth);
+      if (handledSalesTax) return true;
     }
 
     // Fallback for unhandled /api route

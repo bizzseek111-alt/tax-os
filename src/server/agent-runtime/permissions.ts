@@ -463,6 +463,139 @@ export class AgentPermissionController {
       canTriggerUserQuestions: false,
       canMutateTaxPositions: false,
       canApproveTaxTreatment: false
+    },
+
+    // Phase 7 Sales & Use Tax Agents
+    [AgentType.SALES_TAX_SUPERVISOR]: {
+      allowedReadTables: ['TaxCase', 'SalesTaxProfile', 'SalesTransaction', 'EconomicNexusMeasurement', 'PhysicalNexusFact', 'SalesTaxReturn'],
+      allowedWriteTables: ['TaxCase', 'TaxTask'],
+      allowedTools: ['readSalesTaxCase', 'planSalesTaxTasks', 'dispatchSalesTaxAgent', 'reconcileReturns'],
+      allowedJurisdictions: ['US-FED', 'US-CA', 'US-NY', 'US-NJ', 'US-IL', 'US-MA'],
+      allowedTaxDomains: ['SALES_TAX'],
+      canTriggerUserQuestions: false,
+      canMutateTaxPositions: false,
+      canApproveTaxTreatment: false
+    },
+
+    [AgentType.NEXUS_AGENT]: {
+      allowedReadTables: ['TaxCase', 'SalesTransaction', 'EconomicNexusMeasurement', 'PhysicalNexusFact'],
+      allowedWriteTables: ['EconomicNexusMeasurement', 'PhysicalNexusFact', 'NexusEvent', 'TaxTask'],
+      allowedTools: ['evaluateNexus', 'recordPhysicalFact', 'checkThresholds'],
+      allowedJurisdictions: ['US-FED', 'US-CA', 'US-NY', 'US-NJ', 'US-IL', 'US-MA'],
+      allowedTaxDomains: ['SALES_TAX'],
+      canTriggerUserQuestions: false,
+      canMutateTaxPositions: false,
+      canApproveTaxTreatment: false
+    },
+
+    [AgentType.PHYSICAL_NEXUS_AGENT]: {
+      allowedReadTables: ['TaxCase', 'PhysicalNexusFact', 'Evidence'],
+      allowedWriteTables: ['PhysicalNexusFact', 'NexusEvent'],
+      allowedTools: ['recordPhysicalFact'],
+      allowedJurisdictions: ['US-FED', 'US-CA', 'US-NY', 'US-NJ', 'US-IL', 'US-MA'],
+      allowedTaxDomains: ['SALES_TAX'],
+      canTriggerUserQuestions: false,
+      canMutateTaxPositions: false,
+      canApproveTaxTreatment: false
+    },
+
+    [AgentType.ECONOMIC_NEXUS_AGENT]: {
+      allowedReadTables: ['TaxCase', 'SalesTransaction', 'EconomicNexusMeasurement'],
+      allowedWriteTables: ['EconomicNexusMeasurement', 'NexusEvent', 'TaxTask'],
+      allowedTools: ['evaluateNexus', 'checkThresholds'],
+      allowedJurisdictions: ['US-FED', 'US-CA', 'US-NY', 'US-NJ', 'US-IL', 'US-MA'],
+      allowedTaxDomains: ['SALES_TAX'],
+      canTriggerUserQuestions: false,
+      canMutateTaxPositions: false,
+      canApproveTaxTreatment: false
+    },
+
+    [AgentType.REGISTRATION_AGENT]: {
+      allowedReadTables: ['Organization', 'SalesTaxRegistration', 'EconomicNexusMeasurement'],
+      allowedWriteTables: ['SalesTaxRegistration', 'TaxTask'],
+      allowedTools: ['checkRegistration', 'registerPermit', 'calculateFilingFrequency'],
+      allowedJurisdictions: ['US-FED', 'US-CA', 'US-NY', 'US-NJ', 'US-IL', 'US-MA'],
+      allowedTaxDomains: ['SALES_TAX'],
+      canTriggerUserQuestions: false,
+      canMutateTaxPositions: false,
+      canApproveTaxTreatment: false
+    },
+
+    [AgentType.TAXABILITY_AGENT]: {
+      allowedReadTables: ['ProductTaxCategory', 'TaxabilityDecision', 'SalesTaxCustomer'],
+      allowedWriteTables: ['TaxabilityDecision'],
+      allowedTools: ['classifyTaxability', 'evaluateProductRule'],
+      allowedJurisdictions: ['US-FED', 'US-CA', 'US-NY', 'US-NJ', 'US-IL', 'US-MA'],
+      allowedTaxDomains: ['SALES_TAX'],
+      canTriggerUserQuestions: false,
+      canMutateTaxPositions: false,
+      canApproveTaxTreatment: false
+    },
+
+    [AgentType.SOURCING_AGENT]: {
+      allowedReadTables: ['SalesTransaction', 'SalesTaxJurisdiction'],
+      allowedWriteTables: ['SalesTransaction'],
+      allowedTools: ['resolveSourcing', 'calculateCompositeRate'],
+      allowedJurisdictions: ['US-FED', 'US-CA', 'US-NY', 'US-NJ', 'US-IL', 'US-MA'],
+      allowedTaxDomains: ['SALES_TAX'],
+      canTriggerUserQuestions: false,
+      canMutateTaxPositions: false,
+      canApproveTaxTreatment: false
+    },
+
+    [AgentType.MARKETPLACE_AGENT]: {
+      allowedReadTables: ['SalesTransaction'],
+      allowedWriteTables: ['SalesTransaction'],
+      allowedTools: ['segregateMarketplaceSales', 'verifyFacilitator'],
+      allowedJurisdictions: ['US-FED', 'US-CA', 'US-NY', 'US-NJ', 'US-IL', 'US-MA'],
+      allowedTaxDomains: ['SALES_TAX'],
+      canTriggerUserQuestions: false,
+      canMutateTaxPositions: false,
+      canApproveTaxTreatment: false
+    },
+
+    [AgentType.EXEMPTION_AGENT]: {
+      allowedReadTables: ['SalesTaxCustomer', 'ExemptionCertificate', 'Document'],
+      allowedWriteTables: ['ExemptionCertificate'],
+      allowedTools: ['verifyExemptionCertificate', 'checkExpiration'],
+      allowedJurisdictions: ['US-FED', 'US-CA', 'US-NY', 'US-NJ', 'US-IL', 'US-MA'],
+      allowedTaxDomains: ['SALES_TAX'],
+      canTriggerUserQuestions: false,
+      canMutateTaxPositions: false,
+      canApproveTaxTreatment: false
+    },
+
+    [AgentType.SALES_TAX_RECONCILIATION_AGENT]: {
+      allowedReadTables: ['SalesTransaction', 'SalesTaxReturn', 'SalesTaxLine'],
+      allowedWriteTables: ['TaxTask'],
+      allowedTools: ['auditReconciliation', 'flagDiscrepancies'],
+      allowedJurisdictions: ['US-FED', 'US-CA', 'US-NY', 'US-NJ', 'US-IL', 'US-MA'],
+      allowedTaxDomains: ['SALES_TAX'],
+      canTriggerUserQuestions: false,
+      canMutateTaxPositions: false,
+      canApproveTaxTreatment: false
+    },
+
+    [AgentType.SALES_TAX_RETURN_AGENT]: {
+      allowedReadTables: ['TaxCase', 'SalesTransaction', 'UseTaxPosition', 'SalesTaxReturnPeriod'],
+      allowedWriteTables: ['SalesTaxReturn', 'SalesTaxReturnPeriod'],
+      allowedTools: ['generateReturn', 'calculateReturnLines', 'allocateDistricts'],
+      allowedJurisdictions: ['US-FED', 'US-CA', 'US-NY', 'US-NJ', 'US-IL', 'US-MA'],
+      allowedTaxDomains: ['SALES_TAX'],
+      canTriggerUserQuestions: false,
+      canMutateTaxPositions: false,
+      canApproveTaxTreatment: false
+    },
+
+    [AgentType.SALES_TAX_NOTICE_AGENT]: {
+      allowedReadTables: ['SalesTaxNotice', 'Document'],
+      allowedWriteTables: ['SalesTaxNotice', 'ReviewTask'],
+      allowedTools: ['ingestNotice', 'escalateNoticeReview'],
+      allowedJurisdictions: ['US-FED', 'US-CA', 'US-NY', 'US-NJ', 'US-IL', 'US-MA'],
+      allowedTaxDomains: ['SALES_TAX'],
+      canTriggerUserQuestions: false,
+      canMutateTaxPositions: false,
+      canApproveTaxTreatment: false
     }
   };
 
