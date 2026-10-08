@@ -596,6 +596,172 @@ export class AgentPermissionController {
       canTriggerUserQuestions: false,
       canMutateTaxPositions: false,
       canApproveTaxTreatment: false
+    },
+
+    // Phase 8 Payroll Agents
+    [AgentType.PAYROLL_TAX_SUPERVISOR]: {
+      allowedReadTables: ['Employer', 'PayrollRun', 'Employee', 'PayrollTaxLiability', 'PayrollReturn'],
+      allowedWriteTables: ['PayrollRun', 'TaxTask', 'ReviewTask'],
+      allowedTools: ['supervisePayroll', 'auditPayrollRun', 'dispatchPayrollTask'],
+      allowedJurisdictions: ['US-FED', 'US-CA', 'US-NY', 'US-NJ', 'US-IL', 'US-MA'],
+      allowedTaxDomains: ['PAYROLL_TAX', 'EMPLOYER_COMPLIANCE'],
+      canTriggerUserQuestions: false,
+      canMutateTaxPositions: false,
+      canApproveTaxTreatment: false
+    },
+
+    [AgentType.PAYROLL_IMPORT_AGENT]: {
+      allowedReadTables: ['Employer', 'Employee', 'PayrollRun'],
+      allowedWriteTables: ['PayrollRun', 'PayrollEarning', 'PayrollDeduction'],
+      allowedTools: ['importPayrollData', 'normalizeEarnings', 'validatePayPeriod'],
+      allowedJurisdictions: ['US-FED', 'US-CA', 'US-NY', 'US-NJ', 'US-IL', 'US-MA'],
+      allowedTaxDomains: ['PAYROLL_TAX'],
+      canTriggerUserQuestions: false,
+      canMutateTaxPositions: false,
+      canApproveTaxTreatment: false
+    },
+
+    [AgentType.PAYROLL_RECONCILIATION_AGENT]: {
+      allowedReadTables: ['PayrollRun', 'PayrollReturn', 'W2Record', 'W3Record', 'PayrollDepositSchedule'],
+      allowedWriteTables: ['PayrollReconciliation', 'ReviewTask'],
+      allowedTools: ['reconcile941ToPayroll', 'reconcileW2ToW3', 'flagPayrollDiscrepancy'],
+      allowedJurisdictions: ['US-FED', 'US-CA', 'US-NY', 'US-NJ', 'US-IL', 'US-MA'],
+      allowedTaxDomains: ['PAYROLL_TAX'],
+      canTriggerUserQuestions: false,
+      canMutateTaxPositions: false,
+      canApproveTaxTreatment: false
+    },
+
+    [AgentType.FEDERAL_WITHHOLDING_AGENT]: {
+      allowedReadTables: ['Employee', 'PayrollRun', 'PayrollEarning'],
+      allowedWriteTables: ['EmployeeWithholding', 'TaxableWage'],
+      allowedTools: ['calculatePub15T', 'calculateSupplementalWithholding'],
+      allowedJurisdictions: ['US-FED'],
+      allowedTaxDomains: ['PAYROLL_TAX'],
+      canTriggerUserQuestions: false,
+      canMutateTaxPositions: false,
+      canApproveTaxTreatment: false
+    },
+
+    [AgentType.FICA_AGENT]: {
+      allowedReadTables: ['Employee', 'PayrollRun', 'TaxableWage'],
+      allowedWriteTables: ['EmployeeWithholding', 'EmployerTax'],
+      allowedTools: ['calculateOasdi', 'calculateMedicare', 'calculateAdditionalMedicare'],
+      allowedJurisdictions: ['US-FED'],
+      allowedTaxDomains: ['PAYROLL_TAX'],
+      canTriggerUserQuestions: false,
+      canMutateTaxPositions: false,
+      canApproveTaxTreatment: false
+    },
+
+    [AgentType.FUTA_AGENT]: {
+      allowedReadTables: ['Employee', 'PayrollRun', 'EmployerTax'],
+      allowedWriteTables: ['EmployerTax', 'TaxableWage'],
+      allowedTools: ['calculateFuta', 'applySutaCredit'],
+      allowedJurisdictions: ['US-FED'],
+      allowedTaxDomains: ['PAYROLL_TAX'],
+      canTriggerUserQuestions: false,
+      canMutateTaxPositions: false,
+      canApproveTaxTreatment: false
+    },
+
+    [AgentType.STATE_WITHHOLDING_AGENT]: {
+      allowedReadTables: ['Employee', 'PayrollRun', 'TaxableWage'],
+      allowedWriteTables: ['EmployeeWithholding', 'TaxableWage'],
+      allowedTools: ['calculateStatePitWithholding', 'applyStateAllowances'],
+      allowedJurisdictions: ['US-FED', 'US-CA', 'US-NY', 'US-NJ', 'US-IL', 'US-MA'],
+      allowedTaxDomains: ['PAYROLL_TAX'],
+      canTriggerUserQuestions: false,
+      canMutateTaxPositions: false,
+      canApproveTaxTreatment: false
+    },
+
+    [AgentType.STATE_UNEMPLOYMENT_AGENT]: {
+      allowedReadTables: ['Employer', 'Employee', 'PayrollRun', 'StateUnemploymentAccount'],
+      allowedWriteTables: ['EmployerTax', 'TaxableWage'],
+      allowedTools: ['calculateSuiTax', 'evaluateExperienceRate'],
+      allowedJurisdictions: ['US-FED', 'US-CA', 'US-NY', 'US-NJ', 'US-IL', 'US-MA'],
+      allowedTaxDomains: ['PAYROLL_TAX'],
+      canTriggerUserQuestions: false,
+      canMutateTaxPositions: false,
+      canApproveTaxTreatment: false
+    },
+
+    [AgentType.DEPOSIT_SCHEDULE_AGENT]: {
+      allowedReadTables: ['Employer', 'PayrollRun', 'PayrollTaxLiability'],
+      allowedWriteTables: ['PayrollDepositSchedule', 'PayrollTaxLiability'],
+      allowedTools: ['calculateDepositSchedule', 'enforceLookbackRule', 'flagNextDayDeposit'],
+      allowedJurisdictions: ['US-FED', 'US-CA', 'US-NY', 'US-NJ', 'US-IL', 'US-MA'],
+      allowedTaxDomains: ['PAYROLL_TAX'],
+      canTriggerUserQuestions: false,
+      canMutateTaxPositions: false,
+      canApproveTaxTreatment: false
+    },
+
+    [AgentType.FORM_941_AGENT]: {
+      allowedReadTables: ['PayrollRun', 'PayrollTaxLiability', 'PayrollDepositSchedule'],
+      allowedWriteTables: ['PayrollReturn', 'Form941Record'],
+      allowedTools: ['prepareForm941', 'generateScheduleB', 'reconcileQuarterlyLiability'],
+      allowedJurisdictions: ['US-FED'],
+      allowedTaxDomains: ['PAYROLL_TAX'],
+      canTriggerUserQuestions: false,
+      canMutateTaxPositions: false,
+      canApproveTaxTreatment: false
+    },
+
+    [AgentType.FORM_940_AGENT]: {
+      allowedReadTables: ['PayrollRun', 'EmployerTax', 'PayrollDepositSchedule'],
+      allowedWriteTables: ['PayrollReturn', 'Form940Record'],
+      allowedTools: ['prepareForm940', 'calculateFutaLiabilities', 'verifyStateCreditOffset'],
+      allowedJurisdictions: ['US-FED'],
+      allowedTaxDomains: ['PAYROLL_TAX'],
+      canTriggerUserQuestions: false,
+      canMutateTaxPositions: false,
+      canApproveTaxTreatment: false
+    },
+
+    [AgentType.W2_AGENT]: {
+      allowedReadTables: ['Employee', 'PayrollRun', 'EmployeeWithholding', 'TaxableWage'],
+      allowedWriteTables: ['W2Record'],
+      allowedTools: ['generateW2Record', 'mapBox12Codes', 'mapStateLocalWithholding'],
+      allowedJurisdictions: ['US-FED', 'US-CA', 'US-NY', 'US-NJ', 'US-IL', 'US-MA'],
+      allowedTaxDomains: ['PAYROLL_TAX'],
+      canTriggerUserQuestions: false,
+      canMutateTaxPositions: false,
+      canApproveTaxTreatment: false
+    },
+
+    [AgentType.W3_AGENT]: {
+      allowedReadTables: ['Employer', 'W2Record'],
+      allowedWriteTables: ['W3Record'],
+      allowedTools: ['aggregateW3Totals', 'validateParityWith941'],
+      allowedJurisdictions: ['US-FED'],
+      allowedTaxDomains: ['PAYROLL_TAX'],
+      canTriggerUserQuestions: false,
+      canMutateTaxPositions: false,
+      canApproveTaxTreatment: false
+    },
+
+    [AgentType.WORKER_CLASSIFICATION_RISK_AGENT]: {
+      allowedReadTables: ['Contractor', 'Employee', 'WorkerClassificationCase'],
+      allowedWriteTables: ['WorkerClassificationCase', 'ReviewTask'],
+      allowedTools: ['evaluateAbcTest', 'evaluateCommonLawFactors', 'flagClassificationRisk'],
+      allowedJurisdictions: ['US-FED', 'US-CA', 'US-NY', 'US-NJ', 'US-IL', 'US-MA'],
+      allowedTaxDomains: ['PAYROLL_TAX', 'EMPLOYER_COMPLIANCE'],
+      canTriggerUserQuestions: false,
+      canMutateTaxPositions: false,
+      canApproveTaxTreatment: false
+    },
+
+    [AgentType.PAYROLL_NOTICE_AGENT]: {
+      allowedReadTables: ['PayrollNotice', 'Document', 'Employer'],
+      allowedWriteTables: ['PayrollNotice', 'ReviewTask'],
+      allowedTools: ['ingestPayrollNotice', 'routePayrollNoticeReview'],
+      allowedJurisdictions: ['US-FED', 'US-CA', 'US-NY', 'US-NJ', 'US-IL', 'US-MA'],
+      allowedTaxDomains: ['PAYROLL_TAX', 'EMPLOYER_COMPLIANCE'],
+      canTriggerUserQuestions: false,
+      canMutateTaxPositions: false,
+      canApproveTaxTreatment: false
     }
   };
 

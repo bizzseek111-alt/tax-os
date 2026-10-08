@@ -56,3 +56,7 @@ export * from './agents/evidenceExaminer';
 export * from './agents/reconciliationAgent';
 export * from './agents/crossYearAgent';
 export * from './agents/anomalyAgent';
+
+// Phase 7 & 8 Domain Multi-Agent Suites
+export * from './sales-tax';
+export * from './payroll';

@@ -273,6 +273,8 @@ model Organization {
   salesTransactions     SalesTransaction[]
   salesTaxReturns       SalesTaxReturn[]
   salesTaxNotices       SalesTaxNotice[]
+  employers             Employer[]
+  payrollNotices        PayrollNotice[]
 }
 
 model User {
@@ -468,6 +470,11 @@ model TaxCase {
   useTaxPositions           UseTaxPosition[]
   salesTaxReturnPeriods     SalesTaxReturnPeriod[]
   salesTaxReturns           SalesTaxReturn[]
+  payrollRuns               PayrollRun[]
+  workerClassifications     WorkerClassificationCase[]
+  payrollLiabilities         PayrollTaxLiability[]
+  payrollReturns            PayrollReturn[]
+  payrollReconciliations    PayrollReconciliation[]
 
   @@index([organizationId, taxYear])
   @@index([ownerId])
@@ -497,7 +504,9 @@ model TaxObligation {
   facts           TaxFact[]
   calculationRuns TaxCalculationRun[]
   agentRuns       AgentRun[]
-  salesTaxReturns SalesTaxReturn[]
+  salesTaxReturns    SalesTaxReturn[]
+  payrollLiabilities PayrollTaxLiability[]
+  payrollReturns     PayrollReturn[]
 
   @@unique([taxCaseId, jurisdictionCode, period])
   @@index([jurisdictionCode])
@@ -1948,3 +1957,702 @@ model SalesTaxNotice {
   @@index([organizationId, stateCode])
   @@index([severity, status])
 }
+
+// ============================================================================
+// PHASE 8: PRODUCTION PAYROLL TAX & EMPLOYER COMPLIANCE MODELS
+// ============================================================================
+
+enum PayFrequency {
+  WEEKLY
+  BIWEEKLY
+  SEMIMONTHLY
+  MONTHLY
+}
+
+enum WorkerType {
+  EMPLOYEE
+  CONTRACTOR
+}
+
+enum EmploymentStatus {
+  ACTIVE
+  TERMINATED
+  ON_LEAVE
+}
+
+enum PayrollRunStatus {
+  DRAFT
+  CALCULATED
+  APPROVED
+  SUBMITTED
+  RECONCILED
+}
+
+enum EarningType {
+  REGULAR
+  OVERTIME
+  BONUS
+  COMMISSION
+  TIPS
+  SICK_PAY
+  VACATION
+  OTHER
+}
+
+enum DeductionType {
+  RETIREMENT_401K
+  HEALTH_INSURANCE
+  HSA
+  FSA
+  CAFETERIA_SECTION125
+  OTHER_POST_TAX
+}
+
+enum PayrollTaxType {
+  FEDERAL_INCOME
+  SOCIAL_SECURITY
+  MEDICARE
+  ADDITIONAL_MEDICARE
+  FUTA
+  STATE_INCOME
+  STATE_UNEMPLOYMENT
+  STATE_DISABILITY
+  LOCAL_INCOME
+}
+
+enum DepositFrequency {
+  NEXT_DAY
+  SEMI_WEEKLY
+  MONTHLY
+  QUARTERLY
+}
+
+enum DepositStatus {
+  SCHEDULED
+  DUE
+  PAID
+  LATE
+  RECONCILED
+}
+
+enum PayrollReturnStatus {
+  DRAFT
+  RECONCILING
+  NEEDS_REVIEW
+  READY_FOR_REVIEW
+  APPROVED
+  AUTHORIZED_BY_TAXPAYER
+  READY_FOR_FILE
+  FILED
+  ACCEPTED
+  REJECTED
+  AMENDED
+}
+
+enum PayrollReturnForm {
+  FORM_941
+  FORM_940
+  CA_DE9
+  NY_NYS45
+  NJ_NJ927
+  IL_IL941
+  MA_WR1
+}
+
+enum PayrollPaymentStatus {
+  SCHEDULED
+  PROCESSING
+  CLEARED
+  FAILED
+  CANCELLED
+}
+
+enum WorkerClassificationRisk {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum WorkerClassificationStatus {
+  OPEN
+  IN_REVIEW
+  CONFIRMED
+  RECLASSIFIED
+}
+
+enum EmployerRegistrationType {
+  FEDERAL_EIN
+  STATE_WITHHOLDING
+  STATE_UNEMPLOYMENT
+  LOCAL_PAYROLL_TAX
+  OTHER
+}
+
+enum EmployerRegistrationStatus {
+  NOT_REQUIRED
+  REQUIRED
+  IN_PROGRESS
+  ACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+model Employer {
+  id                   String           @id @default(uuid())
+  organizationId       String
+  organization         Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  legalName            String
+  dba                  String?
+  einEncrypted         String
+  einLast4             String           @default("0000")
+  entityType           String           // S_CORP, C_CORP, LLC, PARTNERSHIP, SOLE_PROP
+  primaryAddress       Json             // { street, city, state, zip }
+  payrollContacts      Json             @default("[]")
+  taxJurisdictions     String[]         // ["US-FED", "US-CA", "US-NY"]
+  defaultPaySchedule   PayFrequency     @default(BIWEEKLY)
+  providerConnections  Json             @default("[]")
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  registrations        EmployerRegistration[]
+  employees            Employee[]
+  contractors          Contractor[]
+  workerClassifications WorkerClassificationCase[]
+  payrollRuns          PayrollRun[]
+  payrollLiabilities   PayrollTaxLiability[]
+  depositSchedules     PayrollDepositSchedule[]
+  payrollReturns       PayrollReturn[]
+  w2Records            W2Record[]
+  w3Records            W3Record[]
+  suiAccounts          StateUnemploymentAccount[]
+  localAccounts        LocalPayrollTaxAccount[]
+  notices              PayrollNotice[]
+  payments             PayrollPayment[]
+  reconciliations      PayrollReconciliation[]
+
+  @@index([organizationId])
+}
+
+model EmployerRegistration {
+  id               String                     @id @default(uuid())
+  employerId       String
+  employer         Employer                   @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  jurisdictionCode String                     // "US-FED", "US-CA", "US-NY", "US-NJ", "US-IL", "US-MA"
+  registrationType EmployerRegistrationType
+  accountNumber    String
+  status           EmployerRegistrationStatus @default(ACTIVE)
+  effectiveDate    DateTime
+  expirationDate   DateTime?
+  filingFrequency  DepositFrequency           @default(MONTHLY)
+  credentialsRef   String?
+  createdAt        DateTime                   @default(now())
+  updatedAt        DateTime                   @updatedAt
+
+  @@unique([employerId, jurisdictionCode, registrationType])
+  @@index([employerId])
+}
+
+model Employee {
+  id                      String           @id @default(uuid())
+  employerId              String
+  employer                Employer         @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  employeeNumber          String?
+  firstName               String
+  lastName                String
+  ssnEncrypted            String
+  ssnLast4                String           @default("0000")
+  address                 Json
+  workLocationState       String           // "US-CA", "US-NY", etc.
+  residentState           String           // "US-CA", "US-NY", etc.
+  employmentStatus        EmploymentStatus @default(ACTIVE)
+  hireDate                DateTime
+  terminationDate         DateTime?
+  payFrequency            PayFrequency     @default(BIWEEKLY)
+  payRateCents            BigInt           @default(0)
+  isSalaried              Boolean          @default(false)
+  w4FilingStatus          String           @default("SINGLE")
+  w4MultipleJobs          Boolean          @default(false)
+  w4ClaimDependentsCents  BigInt           @default(0)
+  w4OtherIncomeCents      BigInt           @default(0)
+  w4DeductionsCents       BigInt           @default(0)
+  w4ExtraWithholdingCents BigInt           @default(0)
+  stateWithholdingConfig  Json             @default("{}")
+  benefitsConfig          Json             @default("{}")
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+
+  earnings                PayrollEarning[]
+  deductions              PayrollDeduction[]
+  taxableWages            TaxableWage[]
+  withholdings            EmployeeWithholding[]
+  employerTaxes           EmployerTax[]
+  w2Records               W2Record[]
+
+  @@index([employerId, employmentStatus])
+}
+
+model Contractor {
+  id               String           @id @default(uuid())
+  employerId       String
+  employer         Employer         @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  contractorNumber String?
+  legalName        String
+  dba              String?
+  tinEncrypted     String
+  tinLast4         String           @default("0000")
+  businessType     String
+  address          Json
+  email            String?
+  is1099Eligible   Boolean          @default(true)
+  status           EmploymentStatus @default(ACTIVE)
+  ytdPaymentsCents BigInt           @default(0)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@index([employerId])
+}
+
+model WorkerClassificationCase {
+  id                   String                     @id @default(uuid())
+  employerId           String
+  employer             Employer                   @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  taxCaseId            String?
+  taxCase              TaxCase?                   @relation(fields: [taxCaseId], references: [id], onDelete: SetNull)
+  workerId             String
+  workerName           String
+  workerType           WorkerType                 @default(CONTRACTOR)
+  currentClassification String
+  candidateClassification String
+  facts                Json                       @default("{}")
+  controlIndicators    Json                       @default("{}")
+  economicIndependenceIndicators Json             @default("{}")
+  businessIntegrationIndicators Json             @default("{}")
+  contractEvidenceId   String?
+  stateCode            String
+  federalConsiderations Json                      @default("{}")
+  riskLevel            WorkerClassificationRisk   @default(MEDIUM)
+  status               WorkerClassificationStatus @default(OPEN)
+  reviewTaskId         String?
+  professionalNotes    String?
+  createdAt            DateTime                   @default(now())
+  updatedAt            DateTime                   @updatedAt
+
+  @@index([employerId, riskLevel])
+}
+
+model PayPeriod {
+  id           String       @id @default(uuid())
+  employerId   String
+  frequency    PayFrequency @default(BIWEEKLY)
+  periodNumber Int
+  year         Int          @default(2026)
+  startDate    DateTime
+  endDate      DateTime
+  payDate      DateTime
+  createdAt    DateTime     @default(now())
+
+  payrollRuns  PayrollRun[]
+
+  @@unique([employerId, year, frequency, periodNumber])
+  @@index([employerId, year])
+}
+
+model PayrollRun {
+  id                        String           @id @default(uuid())
+  employerId                String
+  employer                  Employer         @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  taxCaseId                 String?
+  taxCase                   TaxCase?         @relation(fields: [taxCaseId], references: [id], onDelete: SetNull)
+  payPeriodId               String?
+  payPeriod                 PayPeriod?       @relation(fields: [payPeriodId], references: [id], onDelete: SetNull)
+  payDate                   DateTime
+  grossWagesCents           BigInt           @default(0)
+  employeeWithholdingsCents BigInt           @default(0)
+  employerTaxesCents        BigInt           @default(0)
+  totalTaxLiabilityCents    BigInt           @default(0)
+  netPayCents               BigInt           @default(0)
+  employeeCount             Int              @default(0)
+  sourceProvider            String           @default("INTERNAL_DETERMINISTIC")
+  sourceRunId               String?
+  status                    PayrollRunStatus @default(CALCULATED)
+  calculationHash           String           @default("genesis")
+  version                   Int              @default(1)
+  isApproved                Boolean          @default(false)
+  approvedByUserId          String?
+  approvedAt                DateTime?
+  createdAt                 DateTime         @default(now())
+  updatedAt                 DateTime         @updatedAt
+
+  earnings                  PayrollEarning[]
+  deductions                PayrollDeduction[]
+  taxableWages              TaxableWage[]
+  withholdings              EmployeeWithholding[]
+  employerTaxes             EmployerTax[]
+  liabilities               PayrollTaxLiability[]
+
+  @@index([employerId, payDate])
+  @@index([status])
+}
+
+model PayrollEarning {
+  id           String      @id @default(uuid())
+  payrollRunId String
+  payrollRun   PayrollRun  @relation(fields: [payrollRunId], references: [id], onDelete: Cascade)
+  employeeId   String
+  employee     Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  earningType  EarningType @default(REGULAR)
+  hours        Float       @default(0.0)
+  rateCents    BigInt      @default(0)
+  amountCents  BigInt      @default(0)
+  createdAt    DateTime    @default(now())
+
+  @@index([payrollRunId, employeeId])
+}
+
+model PayrollDeduction {
+  id           String        @id @default(uuid())
+  payrollRunId String
+  payrollRun   PayrollRun    @relation(fields: [payrollRunId], references: [id], onDelete: Cascade)
+  employeeId   String
+  employee     Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  deductionType DeductionType
+  amountCents  BigInt        @default(0)
+  isPreTaxFit  Boolean       @default(false)
+  isPreTaxFica Boolean       @default(false)
+  isPreTaxFuta Boolean       @default(false)
+  isPreTaxSit  Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+
+  @@index([payrollRunId, employeeId])
+}
+
+model TaxableWage {
+  id                 String         @id @default(uuid())
+  payrollRunId       String
+  payrollRun         PayrollRun     @relation(fields: [payrollRunId], references: [id], onDelete: Cascade)
+  employeeId         String
+  employee           Employee       @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  taxType            PayrollTaxType
+  jurisdiction       String
+  grossAmountCents   BigInt         @default(0)
+  subjectWagesCents  BigInt         @default(0)
+  excessWagesCents   BigInt         @default(0)
+  taxableWagesCents  BigInt         @default(0)
+  createdAt          DateTime       @default(now())
+
+  @@index([payrollRunId, employeeId, taxType])
+}
+
+model EmployeeWithholding {
+  id                String         @id @default(uuid())
+  payrollRunId      String
+  payrollRun        PayrollRun     @relation(fields: [payrollRunId], references: [id], onDelete: Cascade)
+  employeeId        String
+  employee          Employee       @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  taxType           PayrollTaxType
+  jurisdiction      String
+  wageBaseCents     BigInt         @default(0)
+  taxAmountCents    BigInt         @default(0)
+  calculationMethod String         @default("IRS_PUB_15_T")
+  createdAt         DateTime       @default(now())
+
+  @@index([payrollRunId, employeeId])
+}
+
+model EmployerTax {
+  id             String         @id @default(uuid())
+  payrollRunId   String
+  payrollRun     PayrollRun     @relation(fields: [payrollRunId], references: [id], onDelete: Cascade)
+  employeeId     String
+  employee       Employee       @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  taxType        PayrollTaxType
+  jurisdiction   String
+  wageBaseCents  BigInt         @default(0)
+  taxAmountCents BigInt         @default(0)
+  employerRate   Float          @default(0.0)
+  createdAt      DateTime       @default(now())
+
+  @@index([payrollRunId, employeeId])
+}
+
+model PayrollTaxLiability {
+  id                   String         @id @default(uuid())
+  employerId           String
+  employer             Employer       @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  payrollRunId         String?
+  payrollRun           PayrollRun?    @relation(fields: [payrollRunId], references: [id], onDelete: SetNull)
+  taxCaseId            String?
+  taxCase              TaxCase?       @relation(fields: [taxCaseId], references: [id], onDelete: SetNull)
+  taxObligationId      String?
+  taxObligation        TaxObligation? @relation(fields: [taxObligationId], references: [id], onDelete: SetNull)
+  jurisdiction         String
+  taxType              PayrollTaxType
+  period               String
+  employeePortionCents BigInt         @default(0)
+  employerPortionCents BigInt         @default(0)
+  totalLiabilityCents  BigInt         @default(0)
+  dueDate              DateTime
+  status               DepositStatus  @default(SCHEDULED)
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  depositId            String?
+  deposit              PayrollDepositSchedule? @relation(fields: [depositId], references: [id], onDelete: SetNull)
+
+  @@index([employerId, jurisdiction, period])
+}
+
+model PayrollDepositSchedule {
+  id                   String           @id @default(uuid())
+  employerId           String
+  employer             Employer         @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  depositType          String
+  jurisdiction         String
+  depositFrequency     DepositFrequency @default(MONTHLY)
+  period               String
+  liabilityAmountCents BigInt           @default(0)
+  depositAmountCents   BigInt           @default(0)
+  dueDate              DateTime
+  depositDate          DateTime?
+  paymentMethod        String           @default("EFTPS")
+  confirmationNumber   String?
+  status               DepositStatus    @default(SCHEDULED)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  liabilities          PayrollTaxLiability[]
+
+  @@index([employerId, jurisdiction, status])
+}
+
+model PayrollReturn {
+  id                      String              @id @default(uuid())
+  employerId              String
+  employer                Employer            @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  taxCaseId               String?
+  taxCase                 TaxCase?            @relation(fields: [taxCaseId], references: [id], onDelete: SetNull)
+  taxObligationId         String?
+  taxObligation           TaxObligation?      @relation(fields: [taxObligationId], references: [id], onDelete: SetNull)
+  jurisdiction            String              @default("US-FED")
+  formType                PayrollReturnForm   @default(FORM_941)
+  taxYear                 Int                 @default(2026)
+  quarter                 Int?
+  grossWagesCents         BigInt              @default(0)
+  federalWithholdingCents BigInt              @default(0)
+  ssTaxCents              BigInt              @default(0)
+  medicareTaxCents        BigInt              @default(0)
+  totalTaxCents           BigInt              @default(0)
+  totalTaxLiabilityCents  BigInt              @default(0)
+  totalDepositsCents      BigInt              @default(0)
+  balanceDueCents         BigInt              @default(0)
+  overpaymentCents        BigInt              @default(0)
+  confirmationNumber      String?
+  status                  PayrollReturnStatus @default(DRAFT)
+  isApproved              Boolean             @default(false)
+  approvedByUserId        String?
+  approvedAt              DateTime?
+  isAuthorized            Boolean             @default(false)
+  authorizedByUserId      String?
+  authorizedAt            DateTime?
+  signatureText           String?
+  signatureIpAddress      String?
+  inputHash               String              @default("genesis")
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+
+  form941Details          Form941Record?
+  form940Details          Form940Record?
+  payments                PayrollPayment[]
+
+  @@index([employerId, formType, taxYear])
+  @@index([status])
+}
+
+model Form941Record {
+  id                               String        @id @default(uuid())
+  payrollReturnId                  String        @unique
+  payrollReturn                    PayrollReturn @relation(fields: [payrollReturnId], references: [id], onDelete: Cascade)
+  quarter                          Int           @default(1)
+  line1NumEmployees                Int           @default(0)
+  line2WagesCents                  BigInt        @default(0)
+  line3FitWithheldCents            BigInt        @default(0)
+  line5aTaxableSsWagesCents        BigInt        @default(0)
+  line5aTaxCents                   BigInt        @default(0)
+  line5bTaxableSsTipsCents         BigInt        @default(0)
+  line5bTaxCents                   BigInt        @default(0)
+  line5cTaxableMedWagesCents       BigInt        @default(0)
+  line5cTaxCents                   BigInt        @default(0)
+  line5dTaxableAddlMedWagesCents   BigInt        @default(0)
+  line5dTaxCents                   BigInt        @default(0)
+  line5eTotalFicaCents             BigInt        @default(0)
+  line6TotalTaxesBeforeAdjustments BigInt        @default(0)
+  line10TotalTaxesCents            BigInt        @default(0)
+  line11TotalDepositsCents         BigInt        @default(0)
+  line12BalanceDueCents            BigInt        @default(0)
+  line15OverpaymentCents           BigInt        @default(0)
+  scheduleBRequired                Boolean       @default(false)
+  scheduleBJson                    Json          @default("{}")
+  createdAt                        DateTime      @default(now())
+}
+
+model Form940Record {
+  id                        String        @id @default(uuid())
+  payrollReturnId           String        @unique
+  payrollReturn             PayrollReturn @relation(fields: [payrollReturnId], references: [id], onDelete: Cascade)
+  taxYear                   Int           @default(2026)
+  line3TotalPaymentsCents   BigInt        @default(0)
+  line4ExemptPaymentsCents  BigInt        @default(0)
+  line7TotalTaxableWages    BigInt        @default(0)
+  line8FutaTaxBeforeCredit  BigInt        @default(0)
+  line9StateCreditCents     BigInt        @default(0)
+  line12TotalFutaTaxCents   BigInt        @default(0)
+  line13DepositsCents       BigInt        @default(0)
+  line14BalanceDueCents     BigInt        @default(0)
+  line15OverpaymentCents    BigInt        @default(0)
+  createdAt                 DateTime      @default(now())
+}
+
+model W2Record {
+  id                     String        @id @default(uuid())
+  employerId             String
+  employer               Employer      @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  employeeId             String
+  employee               Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  taxYear                Int           @default(2026)
+  box1WagesCents         BigInt        @default(0)
+  box2FitCents           BigInt        @default(0)
+  box3SsWagesCents       BigInt        @default(0)
+  box4SsTaxCents         BigInt        @default(0)
+  box5MedWagesCents      BigInt        @default(0)
+  box6MedTaxCents        BigInt        @default(0)
+  box7SsTipsCents        BigInt        @default(0)
+  box8AllocatedTipsCents  BigInt        @default(0)
+  box10DependentCare     BigInt        @default(0)
+  box11NonqualPlans      BigInt        @default(0)
+  box12CodesJson         Json          @default("[]")
+  box13StatutoryEmployee Boolean       @default(false)
+  box13RetirementPlan    Boolean       @default(false)
+  box13ThirdPartySickPay Boolean       @default(false)
+  box14OtherJson         Json          @default("[]")
+  stateWithholdingsJson  Json          @default("[]")
+  localWithholdingsJson  Json          @default("[]")
+  status                 String        @default("VERIFIED")
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+
+  @@unique([employerId, employeeId, taxYear])
+  @@index([employerId, taxYear])
+}
+
+model W3Record {
+  id                    String        @id @default(uuid())
+  employerId            String
+  employer              Employer      @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  taxYear               Int           @default(2026)
+  totalW2Count          Int           @default(0)
+  box1TotalWagesCents   BigInt        @default(0)
+  box2TotalFitCents     BigInt        @default(0)
+  box3TotalSsWagesCents  BigInt        @default(0)
+  box4TotalSsTaxCents   BigInt        @default(0)
+  box5TotalMedWagesCents BigInt        @default(0)
+  box6TotalMedTaxCents  BigInt        @default(0)
+  reconciliationStatus  String        @default("BALANCED")
+  discrepanciesJson     Json          @default("[]")
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  @@unique([employerId, taxYear])
+}
+
+model StateUnemploymentAccount {
+  id               String        @id @default(uuid())
+  employerId       String
+  employer         Employer      @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  stateCode        String
+  accountNumber    String
+  experienceRate   Float         @default(0.034)
+  effectiveYear    Int           @default(2026)
+  maxWageBaseCents BigInt        @default(700000)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@unique([employerId, stateCode, effectiveYear])
+  @@index([employerId])
+}
+
+model LocalPayrollTaxAccount {
+  id               String        @id @default(uuid())
+  employerId       String
+  employer         Employer      @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  jurisdictionCode String
+  localName        String
+  taxRate          Float         @default(0.0)
+  wageBaseCents    BigInt?
+  createdAt        DateTime      @default(now())
+
+  @@index([employerId])
+}
+
+model PayrollNotice {
+  id                   String                 @id @default(uuid())
+  employerId           String
+  employer             Employer               @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  organizationId       String
+  organization         Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  agencyName           String
+  jurisdiction         String
+  noticeType           String
+  noticeNumber         String?
+  periodCovered        String?
+  assessedAmountCents  BigInt                 @default(0)
+  receivedDate         DateTime               @default(now())
+  responseDueDate      DateTime?
+  severity             SalesTaxNoticeSeverity @default(INQUIRY)
+  status               String                 @default("OPEN")
+  documentId           String?
+  reviewTaskId         String?
+  resolutionSummary    String?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+
+  @@index([employerId, status])
+}
+
+model PayrollPayment {
+  id                 String               @id @default(uuid())
+  employerId         String
+  employer           Employer             @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  payrollReturnId    String?
+  payrollReturn      PayrollReturn?       @relation(fields: [payrollReturnId], references: [id], onDelete: SetNull)
+  amountCents        BigInt               @default(0)
+  paymentDate        DateTime
+  paymentMethod      String               @default("EFTPS")
+  bankAccountId      String?
+  confirmationNumber String?
+  status             PayrollPaymentStatus @default(SCHEDULED)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  @@index([employerId, status])
+}
+
+model PayrollReconciliation {
+  id                    String        @id @default(uuid())
+  employerId            String
+  employer              Employer      @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  taxCaseId             String?
+  taxCase               TaxCase?      @relation(fields: [taxCaseId], references: [id], onDelete: SetNull)
+  period                String
+  reconciliationType    String
+  runGrossWagesCents    BigInt        @default(0)
+  returnGrossWagesCents BigInt        @default(0)
+  varianceCents         BigInt        @default(0)
+  status                String        @default("BALANCED")
+  exceptionsJson        Json          @default("[]")
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  @@index([employerId, period])
+}
+

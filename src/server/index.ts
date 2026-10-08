@@ -53,6 +53,7 @@ import {
 } from './agent-runtime';
 import { handleReviewApiRequest } from './review-operations/reviewRouter';
 import { handleSalesTaxApiRequest } from './sales-tax/salesTaxRouter';
+import { handlePayrollApiRequest } from './payroll/payrollRouter';
 
 // Port configuration
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
@@ -1356,6 +1357,15 @@ export async function handleApiRequest(req: http.IncomingMessage, res: http.Serv
       const auth = await getRequestContext(req);
       const handledSalesTax = await handleSalesTaxApiRequest(req, res, auth);
       if (handledSalesTax) return true;
+    }
+
+    // ------------------------------------------------------------------------
+    // PHASE 8: PRODUCTION PAYROLL TAX ENGINE ROUTER
+    // ------------------------------------------------------------------------
+    if (url.startsWith('/api/v1/payroll')) {
+      const auth = await getRequestContext(req);
+      const handledPayroll = await handlePayrollApiRequest(req, res, auth);
+      if (handledPayroll) return true;
     }
 
     // Fallback for unhandled /api route
