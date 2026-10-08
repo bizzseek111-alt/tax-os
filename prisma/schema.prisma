@@ -263,6 +263,8 @@ model Organization {
   resolvedEntities ResolvedEntity[]
   ingestionJobs    IngestionJob[]
   agentMemories    AgentMemory[]
+  reviewTeams      ReviewTeam[]
+  professionalProfiles ProfessionalProfile[]
 }
 
 model User {
@@ -291,6 +293,11 @@ model User {
   piiAccessGrants  PrivilegedPiiAccessGrant[]
   assignedTasks    TaxTask[]        @relation("TaskOwnerUser")
   financialConnections FinancialConnection[]
+  teamMemberships  ReviewTeamMembership[]
+  sentMessages     TaxCaseMessage[]
+  qaReviews        QualityReview[]
+  reviewSignoffs   ReviewSignoff[]
+  caseLocks        CaseLock[]
 }
 
 model UserProfile {
@@ -326,16 +333,26 @@ model ProfessionalProfile {
   id                     String             @id @default(uuid())
   userId                 String             @unique
   user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId         String?
+  organization           Organization?      @relation(fields: [organizationId], references: [id])
   credentialType         CredentialType     @default(CPA)
   credentialNumber       String
+  credentialState        String?            // e.g. "CA", "NY"
   credentialStatus       CredentialStatus   @default(ACTIVE)
+  credentialExpiration   DateTime?
   ptin                   String?
+  efin                   String?
   stateBarOrBoard        String?
   authorizedJurisdictions String[]          // e.g. ["US-FED", "US-CA", "US-NY"]
   authorizedTaxDomains   String[]           // e.g. ["INCOME_TAX", "SALES_TAX", "PAYROLL_TAX"]
+  reviewLevel            Int                @default(1) // 1 = Staff/Preparer, 2 = Senior, 3 = Manager/Partner
+  qualityStatus          String             @default("GOOD_STANDING")
+  qualityScore           Float              @default(100.0)
   availabilityStatus     AvailabilityStatus @default(AVAILABLE)
+  capacity               Int                @default(25)
   maxActiveCaseCapacity  Int                @default(25)
   currentActiveCases     Int                @default(0)
+  supervisorId           String?
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
 }
@@ -429,6 +446,11 @@ model TaxCase {
   ingestionJobs           IngestionJob[]
   calculationRuns         TaxCalculationRun[]
   corrections             ProfessionalCorrection[]
+  customerRequests        CustomerRequest[]
+  caseMessages            TaxCaseMessage[]
+  qualityReviews          QualityReview[]
+  reviewSignoffs          ReviewSignoff[]
+  caseLock                CaseLock?
 
   @@index([organizationId, taxYear])
   @@index([ownerId])
@@ -659,26 +681,45 @@ model ProfessionalReview {
 }
 
 model ReviewTask {
-  id                 String         @id @default(uuid())
-  taxCaseId          String
-  taxCase            TaxCase        @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
-  taxObligationId    String?
-  taxObligation      TaxObligation? @relation(fields: [taxObligationId], references: [id], onDelete: SetNull)
-  taxPositionId      String?
-  taxPosition        TaxPosition?   @relation(fields: [taxPositionId], references: [id], onDelete: SetNull)
-  jurisdiction       String         // e.g. "US-CA"
-  taxDomain          TaxDomain
-  requiredRole       UserRole       @default(CPA)
-  assignedUserId     String?
-  assignedUser       User?          @relation("ReviewerAssigned", fields: [assignedUserId], references: [id])
-  riskLevel          RiskLevel      @default(LOW)
-  materialityCents   BigInt         @default(0)
-  status             String         @default("PENDING_ROUTING") // PENDING_ROUTING, IN_REVIEW, APPROVED, ESCALATED
-  deadline           DateTime
-  decision           Json?
-  notes              String?
-  createdAt          DateTime       @default(now())
-  completedAt        DateTime?
+  id                      String              @id @default(uuid())
+  taxCaseId               String
+  taxCase                 TaxCase             @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  taxObligationId         String?
+  taxObligation           TaxObligation?      @relation(fields: [taxObligationId], references: [id], onDelete: SetNull)
+  taxPositionId           String?
+  taxPosition             TaxPosition?        @relation(fields: [taxPositionId], references: [id], onDelete: SetNull)
+  calculationRunId        String?
+  reviewType              String              @default("FINAL_RETURN_REVIEW")
+  taxDomain               TaxDomain           @default(INCOME_TAX)
+  jurisdiction            String              // e.g. "US-CA", "US-FED"
+  requiredRole            UserRole            @default(CPA)
+  requiredCredential      String?
+  assignedUserId          String?
+  assignedUser            User?               @relation("ReviewerAssigned", fields: [assignedUserId], references: [id])
+  assignedTeamId          String?
+  assignedTeam            ReviewTeam?         @relation(fields: [assignedTeamId], references: [id])
+  riskLevel               RiskLevel           @default(LOW)
+  materialityCents        BigInt              @default(0)
+  priority                String              @default("MEDIUM")
+  status                  String              @default("UNASSIGNED") // UNASSIGNED, ASSIGNED, IN_REVIEW, WAITING_ON_CUSTOMER, WAITING_ON_AI, WAITING_ON_DOCUMENT, WAITING_ON_SECOND_REVIEWER, WAITING_ON_ATTORNEY, CHANGES_REQUIRED, APPROVED, REJECTED, CANCELLED, COMPLETED
+  deadline                DateTime
+  dueAt                   DateTime?
+  slaPolicyId             String?
+  slaPolicy               ServiceLevelPolicy? @relation(fields: [slaPolicyId], references: [id])
+  createdBy               String?
+  decision                Json?
+  decisionReason          String?
+  notes                   String?
+  professionalNotes       String?
+  customerVisibleSummary  String?
+  qualityReviewRequired   Boolean             @default(false)
+  isPrivileged            Boolean             @default(false)
+  createdAt               DateTime            @default(now())
+  startedAt               DateTime?
+  completedAt             DateTime?
+
+  customerRequests        CustomerRequest[]
+  qualityReviews          QualityReview[]
 
   @@index([taxCaseId, status])
   @@index([assignedUserId])
@@ -1203,5 +1244,148 @@ model ProfessionalCorrection {
   @@index([taxCaseId])
   @@index([reviewerId])
 }
+
+// ============================================================================
+// PHASE 6: PROFESSIONAL OPERATIONS & REVIEW GOVERNANCE
+// ============================================================================
+
+model ReviewTeam {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  domain         String       @default("INCOME_TAX")
+  jurisdiction   String?
+  leadUserId     String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  members        ReviewTeamMembership[]
+  tasks          ReviewTask[]
+
+  @@index([organizationId, domain])
+}
+
+model ReviewTeamMembership {
+  id        String     @id @default(uuid())
+  teamId    String
+  team      ReviewTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String     @default("MEMBER") // LEAD, SENIOR, MEMBER
+  joinedAt  DateTime   @default(now())
+
+  @@unique([teamId, userId])
+}
+
+model CustomerRequest {
+  id                 String      @id @default(uuid())
+  taxCaseId          String
+  taxCase            TaxCase     @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  reviewTaskId       String?
+  reviewTask         ReviewTask? @relation(fields: [reviewTaskId], references: [id], onDelete: SetNull)
+  taxPositionId      String?
+  requestType        String      // QUESTION, DOCUMENT_REQUEST, CONFIRMATION, SIGNATURE_REQUEST, PAYMENT_INFORMATION
+  prompt             String
+  reason             String
+  expectedAnswerType String      @default("TEXT") // TEXT, NUMBER, BOOLEAN, DOCUMENT, SIGNATURE
+  options            Json        @default("[]")
+  responsePayload    Json?
+  responseDocumentId String?
+  status             String      @default("PENDING") // PENDING, RESPONDED, EXPIRED, CANCELLED
+  deadline           DateTime?
+  requestedByUserId  String
+  respondedAt        DateTime?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  @@index([taxCaseId, status])
+}
+
+model TaxCaseMessage {
+  id                String   @id @default(uuid())
+  taxCaseId         String
+  taxCase           TaxCase  @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  senderUserId      String
+  sender            User     @relation(fields: [senderUserId], references: [id])
+  senderRole        String
+  recipientScope    String   @default("ALL") // ALL, CUSTOMER_REVIEWER, REVIEWER_OPS, REVIEWER_SENIOR, REVIEWER_ATTORNEY
+  content           String
+  isPrivilegedLegal Boolean  @default(false)
+  attachments       Json     @default("[]")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([taxCaseId, recipientScope])
+}
+
+model QualityReview {
+  id                String      @id @default(uuid())
+  taxCaseId         String
+  taxCase           TaxCase     @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  reviewTaskId      String?
+  reviewTask        ReviewTask? @relation(fields: [reviewTaskId], references: [id], onDelete: SetNull)
+  qaReviewerId      String
+  qaReviewer        User        @relation(fields: [qaReviewerId], references: [id])
+  samplingReason    String      // RANDOM_SAMPLE, HIGH_RISK, NEW_REVIEWER, LARGE_DEDUCTION, MANUAL_OVERRIDE, AGENT_CONFLICT
+  status            String      @default("PENDING") // PENDING, PASS, CORRECTION_REQUIRED, ESCALATED
+  action            String?     // PASS, CORRECTION_REQUIRED, ESCALATE, PROCESS_ISSUE, AGENT_ISSUE, RULE_ISSUE
+  score             Float?
+  findings          Json        @default("[]")
+  correctiveActions String?
+  completedAt       DateTime?
+  createdAt         DateTime    @default(now())
+
+  @@index([taxCaseId, status])
+  @@index([qaReviewerId])
+}
+
+model ServiceLevelPolicy {
+  id                       String       @id @default(uuid())
+  name                     String
+  domain                   String       @default("INCOME_TAX")
+  tier                     String       @default("FULL_TAX_OS")
+  targetTurnaroundHours    Int          @default(24)
+  warningThresholdHours    Int          @default(18)
+  escalationThresholdHours Int          @default(30)
+  isActive                 Boolean      @default(true)
+  createdAt                DateTime     @default(now())
+
+  reviewTasks              ReviewTask[]
+}
+
+model ReviewSignoff {
+  id                 String    @id @default(uuid())
+  taxCaseId          String
+  taxCase            TaxCase   @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  reviewVersion      Int       @default(1)
+  approvedByUserId   String
+  approvedByUser     User      @relation(fields: [approvedByUserId], references: [id])
+  approvedAt         DateTime  @default(now())
+  calculationRunId   String
+  ruleSetVersion     String
+  inputFactHash      String
+  checklistResults   Json      @default("{}")
+  isInvalidated      Boolean   @default(false)
+  invalidatedAt      DateTime?
+  invalidationReason String?
+  createdAt          DateTime  @default(now())
+
+  @@index([taxCaseId, reviewVersion])
+}
+
+model CaseLock {
+  id             String   @id @default(uuid())
+  taxCaseId      String   @unique
+  taxCase        TaxCase  @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  lockedByUserId String
+  lockedByUser   User     @relation(fields: [lockedByUserId], references: [id])
+  lockedAt       DateTime @default(now())
+  expiresAt      DateTime
+  reason         String
+
+  @@index([taxCaseId])
+}
+
 
 

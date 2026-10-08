@@ -51,6 +51,7 @@ import {
   AgentTelemetryService,
   AgentType
 } from './agent-runtime';
+import { handleReviewApiRequest } from './review-operations/reviewRouter';
 
 // Port configuration
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
@@ -1336,6 +1337,15 @@ export async function handleApiRequest(req: http.IncomingMessage, res: http.Serv
 
       sendJson(res, 200, { success: true, summary, feed });
       return true;
+    }
+
+    // ------------------------------------------------------------------------
+    // PHASE 6: REVIEW OPERATIONS & GOVERNANCE ROUTER
+    // ------------------------------------------------------------------------
+    if (url.startsWith('/api/review')) {
+      const auth = await getRequestContext(req);
+      const handledReview = await handleReviewApiRequest(req, res, auth);
+      if (handledReview) return true;
     }
 
     // Fallback for unhandled /api route
