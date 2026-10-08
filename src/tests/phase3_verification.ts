@@ -367,7 +367,7 @@ async function runPhase3Verification() {
 
   const explainFormLine = CalculationLineageService.explainNumber(run1, '1040:line_1z');
   assert(explainFormLine !== null, 'Lineage resolves Form 1040 Line 1z via form line code lookup');
-  assert(explainFormLine?.formLineRef.includes('1040'), 'Lineage references Form 1040');
+  assert(Boolean(explainFormLine?.formLineRef.includes('1040')), 'Lineage references Form 1040');
 
   // ---------------------------------------------------------------------------
   // TEST SUITE 10: DATABASE PERSISTENCE, RUN COMPARISON & TAX TWIN

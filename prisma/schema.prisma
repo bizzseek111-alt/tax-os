@@ -975,3 +975,156 @@ model IngestionJob {
 
   @@index([organizationId, status])
 }
+
+// ============================================================================
+// TAX AUTHORITY ENGINE, RAG & RULE GRAPH (PHASE 4)
+// ============================================================================
+
+model TaxAuthoritySource {
+  id                  String               @id @default(uuid())
+  jurisdiction        String               // "US-FED", "US-CA", "US-NY", "US-NJ", "US-IL", "US-MA"
+  taxYear             Int                  @default(2026)
+  authorityType       String               // STATUTE, REGULATION, COURT_DECISION, REVENUE_RULING, etc.
+  authorityLevel      Int                  // 1 = STATUTE (highest), 15 = SECONDARY_COMMENTARY (lowest)
+  publisher           String               // "INTERNAL_REVENUE_SERVICE", "CA_FRANCHISE_TAX_BOARD", etc.
+  title               String
+  sourceUrl           String?
+  citationCode        String               // e.g. "26 U.S.C. § 199A", "Cal. RTC § 17041"
+  publicationDate     DateTime?
+  effectiveFrom       DateTime
+  effectiveTo         DateTime?
+  supersedesSourceId  String?
+  supersededBySourceId String?
+  precedentialStatus  String               @default("BINDING") // BINDING, PERSUASIVE, ADMINISTRATIVE, SUPERSEDED, PROPOSED, HISTORICAL
+  affectedForms       Json                 @default("[]")
+  affectedSchedules   Json                 @default("[]")
+  topicTags           Json                 @default("[]")
+  retrievedAt         DateTime             @default(now())
+  contentHash         String               // SHA-256 hash of raw content
+  sourceVersion       String               @default("2026.1")
+  reviewStatus        String               @default("APPROVED") // DRAFT, UNDER_REVIEW, APPROVED, REJECTED, ARCHIVED
+  rawContent          String               @db.Text
+  normalizedContent   String               @db.Text
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  chunks              TaxAuthorityChunk[]
+  rules               TaxRule[]
+
+  @@unique([jurisdiction, citationCode, taxYear, sourceVersion])
+  @@index([jurisdiction, taxYear])
+  @@index([authorityType, authorityLevel])
+  @@index([contentHash])
+}
+
+model TaxAuthorityChunk {
+  id                 String             @id @default(uuid())
+  sourceId           String
+  source             TaxAuthoritySource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  jurisdiction       String
+  taxYear            Int                @default(2026)
+  sectionPath        String             // e.g. "§ 199A > (b) > (2) > (A)"
+  heading            String?
+  content            String             @db.Text
+  pageNumber         Int?
+  lineNumber         Int?
+  authorityLevel     Int
+  precedentialStatus String             @default("BINDING")
+  embedding          Json?              // Float array representation
+  embeddingModel     String?            @default("deterministic-tax-v1")
+  embeddingVersion   String?            @default("1.0.0")
+  createdAt          DateTime           @default(now())
+
+  @@index([sourceId])
+  @@index([jurisdiction, taxYear])
+  @@index([authorityLevel, precedentialStatus])
+}
+
+model TaxRule {
+  id                        String                   @id @default(uuid())
+  ruleId                    String                   @unique // e.g. "FED-SEC-199A-QBI-DEDUCTION"
+  jurisdiction              String                   // "US-FED", "US-CA", "US-NY", "US-NJ", "US-IL", "US-MA"
+  taxYear                   Int                      @default(2026)
+  taxDomain                 String                   @default("INCOME_TAX")
+  topic                     String                   // QUALIFIED_BUSINESS_INCOME, SELF_EMPLOYMENT_TAX, etc.
+  title                     String
+  description               String                   @db.Text
+  conditions                Json                     // AST condition expression
+  requiredFacts             Json                     @default("[]")
+  exceptions                Json                     @default("[]")
+  thresholds                Json                     @default("{}")
+  phaseOuts                 Json                     @default("{}")
+  elections                 Json                     @default("{}")
+  calculationReference      String?                  // Deterministic engine reference e.g. "federalEngine.calculateQbiDeduction"
+  formMappings              Json                     @default("[]")
+  federalConformityBehavior String?                  @default("CONFORMS") // CONFORMS, DECOUPLED, MODIFIED, NOT_APPLICABLE
+  authorityRefs             Json                     @default("[]")
+  ruleVersion               String                   @default("2026.1")
+  reviewStatus              String                   @default("ACTIVE") // DRAFT, AI_EXTRACTED, PRO_REVIEW_REQUIRED, APPROVED, ACTIVE, DEPRECATED
+  approvedByUserId          String?
+  approvedAt                DateTime?
+  effectiveFrom             DateTime
+  effectiveTo               DateTime?
+  sourceId                  String?
+  source                    TaxAuthoritySource?      @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  createdAt                 DateTime                 @default(now())
+  updatedAt                 DateTime                 @updatedAt
+
+  conformityRecords         FederalStateConformity[] @relation("FederalRuleConformity")
+
+  @@unique([ruleId, taxYear, ruleVersion])
+  @@index([jurisdiction, taxYear])
+  @@index([topic])
+  @@index([reviewStatus])
+}
+
+model FederalStateConformity {
+  id                  String    @id @default(uuid())
+  federalRuleId       String
+  federalRule         TaxRule   @relation("FederalRuleConformity", fields: [federalRuleId], references: [ruleId], onDelete: Cascade)
+  state               String    // "US-CA", "US-NY", "US-NJ", "US-IL", "US-MA"
+  taxYear             Int       @default(2026)
+  conformityStatus    String    // ROLLING_CONFORMITY, FIXED_DATE_CONFORMITY, SELECTIVE_DECOUPLING, COMPLETELY_INDEPENDENT
+  stateAdjustmentRule Json      // Adjustment specifications
+  authorityRefs       Json      @default("[]")
+  effectiveFrom       DateTime
+  effectiveTo         DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@unique([federalRuleId, state, taxYear])
+  @@index([state, taxYear])
+  @@index([conformityStatus])
+}
+
+model TaxRuleSetVersion {
+  id               String    @id @default(uuid())
+  jurisdiction     String
+  taxYear          Int       @default(2026)
+  versionCode      String    // e.g. "FED-2026.1"
+  rulesCount       Int       @default(0)
+  contentHash      String    // SHA-256 checksum of canonical rules
+  status           String    @default("RELEASED") // DRAFT, RELEASED, ARCHIVED
+  releasedAt       DateTime  @default(now())
+  releasedByUserId String?
+  createdAt        DateTime  @default(now())
+
+  @@unique([jurisdiction, taxYear, versionCode])
+  @@index([jurisdiction, taxYear])
+}
+
+model CitationVerificationRecord {
+  id                 String   @id @default(uuid())
+  citationCode       String
+  jurisdiction       String
+  taxYear            Int      @default(2026)
+  isVerified         Boolean
+  verificationStatus String   // VERIFIED, INVALID_CITATION, WRONG_JURISDICTION, WRONG_YEAR, SUPERSEDED, AMBIGUOUS
+  sourceId           String?
+  chunkId            String?
+  reasons            Json     @default("[]")
+  verifiedAt         DateTime @default(now())
+
+  @@index([citationCode, jurisdiction, taxYear])
+}
+

@@ -34,6 +34,13 @@ import { KillSwitchManager } from '../agent-os/KillSwitchManager';
 import { CalculationRunService } from './services/taxCalculation/calculationRunService';
 import { CalculationLineageService } from './services/taxCalculation/lineage';
 import { FormMappingService } from './services/taxCalculation/formMapping';
+import { TaxAuthoritySearchService } from './services/taxAuthority/rag/search';
+import { TaxRuleManager } from './services/taxAuthority/rules/ruleManager';
+import { StateConformityService } from './services/taxAuthority/rules/conformityService';
+import { TaxCitationValidator } from './services/taxAuthority/validation/citationValidator';
+import { TaxRuleExplanationService } from './services/taxAuthority/explanation/explainRule';
+import { TaxLawWatcher } from './services/taxAuthority/watcher/taxLawWatcher';
+import { TaxAuthorityProviderRegistry } from './services/taxAuthority/providers';
 
 // Port configuration
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
@@ -1019,6 +1026,158 @@ export async function handleApiRequest(req: http.IncomingMessage, res: http.Serv
           citations: ['26 U.S.C. § 179', 'Cal. Rev. & Tax. Code § 17255', '26 U.S.C. § 219']
         }
       });
+      return true;
+    }
+
+    // ------------------------------------------------------------------------
+    // PHASE 4: TAX AUTHORITY ENGINE & REAL TAX-LAW RAG
+    // ------------------------------------------------------------------------
+
+    // Seed authority sources, chunks, and rules across jurisdictions
+    if (url === '/api/authority/seed' && method === 'POST') {
+      const summary = await TaxAuthorityProviderRegistry.seedAllJurisdictions(2026);
+      sendJson(res, 200, {
+        success: true,
+        message: 'Successfully seeded authoritative legal corpus across 6 jurisdictions',
+        summary
+      });
+      return true;
+    }
+
+    // Hybrid Tax-Law Research Search
+    if (url === '/api/authority/research' && method === 'POST') {
+      const body = await parseJsonBody(req);
+      const { query, jurisdiction, taxYear, topic, limit } = body;
+      const results = await TaxAuthoritySearchService.search({
+        query: query || '',
+        jurisdiction: jurisdiction || 'US-FED',
+        taxYear: taxYear ? parseInt(taxYear, 10) : 2026,
+        topic,
+        limit: limit ? parseInt(limit, 10) : 10
+      });
+
+      sendJson(res, 200, {
+        success: true,
+        query,
+        jurisdiction,
+        taxYear: taxYear || 2026,
+        count: results.length,
+        results
+      });
+      return true;
+    }
+
+    // Get Active Rules or Specific Rule
+    if (url?.startsWith('/api/authority/rules') && method === 'GET') {
+      const parsedUrl = new URL(url, `http://${req.headers.host || 'localhost'}`);
+      const ruleId = parsedUrl.searchParams.get('ruleId');
+      const jurisdiction = parsedUrl.searchParams.get('jurisdiction') as any || 'US-FED';
+      const taxYear = parsedUrl.searchParams.get('taxYear') ? parseInt(parsedUrl.searchParams.get('taxYear')!, 10) : 2026;
+      const topic = parsedUrl.searchParams.get('topic') || undefined;
+
+      if (ruleId) {
+        const rule = await TaxRuleManager.getActiveRule(ruleId, taxYear);
+        if (!rule) {
+          sendJson(res, 404, { error: `Rule ${ruleId} not found or inactive for tax year ${taxYear}` });
+          return true;
+        }
+        sendJson(res, 200, { success: true, rule });
+        return true;
+      }
+
+      const rules = await TaxRuleManager.listRules({ jurisdiction, taxYear, topic });
+      sendJson(res, 200, { success: true, count: rules.length, rules });
+      return true;
+    }
+
+    // Review / Approve Rule (CPA/EA/Attorney only)
+    if (url === '/api/authority/rules/review' && method === 'POST') {
+      const context = await getRequestContext(req);
+      const body = await parseJsonBody(req);
+      const { ruleId, taxYear, ruleVersion, newStatus, notes } = body;
+
+      const updatedRule = await TaxRuleManager.reviewRule({
+        ruleId,
+        taxYear: taxYear ? parseInt(taxYear, 10) : 2026,
+        ruleVersion,
+        newStatus,
+        reviewerId: context.user.id,
+        reviewerRole: context.user.role,
+        notes
+      });
+
+      sendJson(res, 200, {
+        success: true,
+        message: `Rule ${ruleId} transitioned to ${newStatus} by ${context.user.role}`,
+        rule: updatedRule
+      });
+      return true;
+    }
+
+    // Validate Statutory Citation
+    if (url?.startsWith('/api/authority/citations/validate') && method === 'GET') {
+      const parsedUrl = new URL(url, `http://${req.headers.host || 'localhost'}`);
+      const citationCode = parsedUrl.searchParams.get('citationCode') || '';
+      const jurisdiction = (parsedUrl.searchParams.get('jurisdiction') || 'US-FED') as any;
+      const taxYear = parsedUrl.searchParams.get('taxYear') ? parseInt(parsedUrl.searchParams.get('taxYear')!, 10) : 2026;
+      const propositionText = parsedUrl.searchParams.get('propositionText') || undefined;
+
+      const result = await TaxCitationValidator.validateCitation({
+        citationCode,
+        jurisdiction,
+        taxYear,
+        propositionText
+      });
+
+      sendJson(res, 200, { success: true, result });
+      return true;
+    }
+
+    // Check State Conformity
+    if (url?.startsWith('/api/authority/conformity') && method === 'GET') {
+      const parsedUrl = new URL(url, `http://${req.headers.host || 'localhost'}`);
+      const federalRuleId = parsedUrl.searchParams.get('federalRuleId') || '';
+      const state = (parsedUrl.searchParams.get('state') || 'US-CA') as any;
+      const taxYear = parsedUrl.searchParams.get('taxYear') ? parseInt(parsedUrl.searchParams.get('taxYear')!, 10) : 2026;
+      const amountCents = parsedUrl.searchParams.get('amountCents') ? BigInt(parsedUrl.searchParams.get('amountCents')!) : 100000n;
+
+      const result = await StateConformityService.evaluateStateTreatment({
+        federalRuleId,
+        federalAmountCents: amountCents,
+        state,
+        taxYear,
+        facts: {}
+      });
+
+      sendJson(res, 200, { success: true, result });
+      return true;
+    }
+
+    // Prove This Rule
+    if (url?.startsWith('/api/authority/prove-rule') && method === 'GET') {
+      const parsedUrl = new URL(url, `http://${req.headers.host || 'localhost'}`);
+      const ruleId = parsedUrl.searchParams.get('ruleId') || 'FED-SEC-199A-QBI-DEDUCTION';
+      const jurisdiction = (parsedUrl.searchParams.get('jurisdiction') || 'US-FED') as any;
+      const taxYear = parsedUrl.searchParams.get('taxYear') ? parseInt(parsedUrl.searchParams.get('taxYear')!, 10) : 2026;
+
+      const explanation = await TaxRuleExplanationService.explainRule(ruleId, jurisdiction, taxYear);
+      sendJson(res, 200, { success: true, explanation });
+      return true;
+    }
+
+    // Impact Analysis for Rule Updates
+    if (url === '/api/authority/impact-analysis' && method === 'POST') {
+      const body = await parseJsonBody(req);
+      const { ruleId, jurisdiction, taxYear, changeType } = body;
+
+      const analysis = await TaxLawWatcher.analyzeImpact({
+        ruleId,
+        jurisdiction: jurisdiction || 'US-FED',
+        taxYear: taxYear ? parseInt(taxYear, 10) : 2026,
+        changeType: changeType || 'AMENDED'
+      });
+
+      sendJson(res, 200, { success: true, analysis });
       return true;
     }
 

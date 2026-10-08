@@ -19,7 +19,7 @@ export interface GoldenScenario {
   expected: {
     totalIncomeCents: bigint;
     adjustedGrossIncomeCents: bigint;
-    taxableIncomeCents: bigint;
+    taxableIncomeCents?: bigint;
     totalFederalTaxCents?: bigint;
     selfEmploymentTaxCents?: bigint;
     qbiDeductionCents?: bigint;
@@ -483,6 +483,7 @@ export const GOLDEN_SCENARIOS: GoldenScenario[] = [
       investmentIncome: {
         taxableInterestCents: 0n,
         ordinaryDividendsCents: 0n,
+        qualifiedDividendsCents: 0n,
       },
       payments: { estimatedTaxPaymentsCents: 0n },
       residentStates: ['US-FED', 'US-IL'],
