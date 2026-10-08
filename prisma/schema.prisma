@@ -481,6 +481,7 @@ model TaxCase {
   filingPayments            FilingPayment[]
   filingExtensions          FilingExtension[]
   amendmentCases            AmendmentCase[]
+  deletionRequests          DataDeletionRequest[]
 
   @@index([organizationId, taxYear])
   @@index([ownerId])
@@ -2948,5 +2949,132 @@ model FilingExtension {
 
   @@index([taxCaseId, status])
 }
+
+// ============================================================================
+// PHASE 10: SECURITY HARDENING, OPERATIONS, COMPLIANCE & GOVERNANCE
+// ============================================================================
+
+enum KillSwitchTargetType {
+  AGENT
+  MODEL
+  TAX_RULE
+  JURISDICTION
+  FILING_PROVIDER
+  SALES_TAX_ENGINE
+  PAYROLL_ENGINE
+  DOCUMENT_PROVIDER
+}
+
+enum SecuritySeverity {
+  P0_CRITICAL
+  P1_HIGH
+  P2_MEDIUM
+  P3_LOW
+}
+
+enum TaxDefectSeverity {
+  T0_INCORRECT_LIABILITY
+  T1_MATERIAL_POSITION_ERROR
+  T2_NON_MATERIAL_DISCREPANCY
+  T3_COSMETIC_EXPLANATION
+}
+
+enum LaunchReadinessStatus {
+  NOT_READY_FOR_BETA
+  INTERNAL_ALPHA
+  PRIVATE_BETA_READY
+  LIMITED_PRODUCTION_READY
+  GENERAL_AVAILABILITY_READY
+}
+
+enum DeletionRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXECUTED
+}
+
+model OperationalKillSwitch {
+  id              String               @id @default(uuid())
+  targetType      KillSwitchTargetType
+  targetKey       String               // e.g. "DeductionAgent", "2026.1_FED_STANDARD_DEDUCTION", "US-NY"
+  isActive        Boolean              @default(true) // true = tripped/killed
+  reason          String
+  trippedByUserId String
+  trippedAt       DateTime             @default(now())
+  recoveredAt     DateTime?
+  metadata        Json                 @default("{}")
+
+  @@unique([targetType, targetKey])
+  @@index([targetType, isActive])
+}
+
+model FeatureFlag {
+  id                  String   @id @default(uuid())
+  key                 String   @unique // e.g. "PRIVATE_BETA_ACCESS", "EFILE_DIRECT_TRANSMISSION"
+  name                String
+  description         String
+  isEnabled           Boolean  @default(false)
+  targetOrganizations String[] @default([]) // Empty means all if enabled, or restrict to listed org IDs
+  targetRoles         String[] @default([])
+  targetJurisdictions String[] @default([])
+  targetDomains       String[] @default([])
+  isBetaOnly          Boolean  @default(true)
+  rolloutPercentage   Int      @default(0) // 0-100
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([key, isEnabled])
+}
+
+model DataRetentionPolicy {
+  id                     String   @id @default(uuid())
+  domain                 String   @unique // "TAX_RETURN", "TRANSACTION", "DOCUMENT", "AUDIT_LOG", "PII_GRANT"
+  statutoryAuthority     String   // "IRC § 6501(a) (3 years)", "IRC § 6501(e) (6 years)", "26 CFR § 1.6001-1"
+  retentionMonths        Int      // e.g. 36 (3 yrs), 84 (7 yrs), 120 (10 yrs)
+  requiresLegalHoldCheck Boolean  @default(true)
+  isEnforced             Boolean  @default(true)
+  description            String
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model DataDeletionRequest {
+  id                           String                @id @default(uuid())
+  taxCaseId                    String
+  taxCase                      TaxCase               @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  requestedByUserId            String
+  status                       DeletionRequestStatus @default(PENDING)
+  statutoryEligibilityVerified Boolean               @default(false)
+  legalHoldActive              Boolean               @default(false)
+  reason                       String
+  rejectionReason              String?
+  executedAt                   DateTime?
+  auditReference               String?
+  createdAt                    DateTime              @default(now())
+  updatedAt                    DateTime              @updatedAt
+
+  @@index([taxCaseId, status])
+}
+
+model SecurityIncident {
+  id              String           @id @default(uuid())
+  incidentNumber  String           @unique // e.g. "INC-2026-001"
+  severity        SecuritySeverity
+  category        String           // "TENANT_LEAKAGE", "AUTH_BYPASS", "INJECTION", "RATE_LIMIT_ABUSE", "EXFILTRATION", "UNAUTHORIZED_ACCESS"
+  title           String
+  description     String
+  status          String           @default("OPEN") // "OPEN", "INVESTIGATING", "MITIGATED", "RESOLVED"
+  affectedOrgIds  String[]         @default([])
+  affectedUserIds String[]         @default([])
+  mitigationPlan  String?
+  detectedAt      DateTime         @default(now())
+  resolvedAt      DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([severity, status])
+}
+
 
 

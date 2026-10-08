@@ -55,6 +55,7 @@ import { handleReviewApiRequest } from './review-operations/reviewRouter';
 import { handleSalesTaxApiRequest } from './sales-tax/salesTaxRouter';
 import { handlePayrollApiRequest } from './payroll/payrollRouter';
 import { handleFilingApiRequest } from './filing/filingRouter';
+import { handleSecurityApiRequest } from './security/securityRouter';
 
 // Port configuration
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
@@ -1376,6 +1377,15 @@ export async function handleApiRequest(req: http.IncomingMessage, res: http.Serv
       const auth = await getRequestContext(req);
       const handledFiling = await handleFilingApiRequest(req, res, auth);
       if (handledFiling) return true;
+    }
+
+    // ------------------------------------------------------------------------
+    // PHASE 10: SECURITY HARDENING, OPERATIONS & GOVERNANCE ROUTER
+    // ------------------------------------------------------------------------
+    if (url.startsWith('/api/v1/security')) {
+      const auth = await getRequestContext(req);
+      const handledSecurity = await handleSecurityApiRequest(req, res, auth);
+      if (handledSecurity) return true;
     }
 
     // Fallback for unhandled /api route
