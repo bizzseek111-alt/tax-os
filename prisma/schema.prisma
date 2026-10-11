@@ -482,6 +482,8 @@ model TaxCase {
   filingExtensions          FilingExtension[]
   amendmentCases            AmendmentCase[]
   deletionRequests          DataDeletionRequest[]
+  taxResearchRecords        TaxResearchRecord[]
+  authorityConflicts        AuthorityConflict[]
 
   @@index([organizationId, taxYear])
   @@index([ownerId])
@@ -613,6 +615,7 @@ model TaxPosition {
   decisions   TaxDecision[]
   reviewTasks ReviewTask[]
   evidence    Evidence[]
+  propositions PropositionNode[]
 
   @@index([taxCaseId, status])
   @@index([category])
@@ -3075,6 +3078,174 @@ model SecurityIncident {
 
   @@index([severity, status])
 }
+
+// ============================================================================
+// PHASE 11A: LIVE TAX AUTHORITY RUNTIME & VERIFIED RESEARCH
+// ============================================================================
+
+enum ResearchDomain {
+  FEDERAL_INDIVIDUAL
+  FEDERAL_BUSINESS
+  STATE_INCOME
+  MULTI_STATE
+  SALES_TAX
+  PAYROLL_TAX
+  EMPLOYMENT_TAX
+  TAX_NOTICE
+  AMENDMENT
+  TAX_PLANNING
+  LEGAL_CONTROVERSY
+}
+
+enum FreshnessStatus {
+  CURRENT
+  CHECK_REQUIRED
+  CHANGED
+  SUPERSEDED
+  WITHDRAWN
+  UNAVAILABLE
+}
+
+enum AuthorityEscalationType {
+  NONE
+  CPA_REVIEW
+  ATTORNEY_REVIEW
+  COMPLIANCE_DIRECTOR
+}
+
+model TaxResearchRecord {
+  id                         String         @id @default(uuid())
+  taxCaseId                  String
+  taxCase                    TaxCase        @relation(fields: [taxCaseId], references: [id], onDelete: Cascade)
+  taxYear                    Int
+  taxDomain                  ResearchDomain @default(FEDERAL_INDIVIDUAL)
+  jurisdictions              String[]       @default(["US-FED"])
+  taxpayerType               String         @default("INDIVIDUAL")
+  question                   String         @db.Text
+  factsUsed                  Json           @default("[]")
+  factsMissing               Json           @default("[]")
+  applicableRules            Json           @default("[]")
+  authoritySources           Json           @default("[]")
+  authorityHierarchy         Json           @default("[]")
+  conflicts                  Json           @default("[]")
+  interpretation             String         @db.Text
+  calculationRequired        Boolean        @default(false)
+  professionalReviewRequired Boolean        @default(false)
+  legalReviewRequired        Boolean        @default(false)
+  confidence                 Float          @default(1.0)
+  reasoningSummary           String         @db.Text
+  recommendedNextAction      String         @default("PROCEED")
+  latencyTier                String         @default("NORMAL")
+  cacheHit                   Boolean        @default(false)
+  createdAt                  DateTime       @default(now())
+  updatedAt                  DateTime       @updatedAt
+
+  @@index([taxCaseId, taxYear])
+  @@index([taxDomain])
+}
+
+model AuthorityConflict {
+  id                    String                  @id @default(uuid())
+  taxCaseId             String?
+  taxCase               TaxCase?                @relation(fields: [taxCaseId], references: [id], onDelete: SetNull)
+  topic                 String
+  jurisdiction          String
+  taxYear               Int
+  primarySourceCode     String
+  conflictingSourceCode String
+  primaryRank           Int
+  conflictingRank       Int
+  conflictSummary       String                  @db.Text
+  materialityCents      BigInt                  @default(0)
+  escalationRequired    AuthorityEscalationType @default(CPA_REVIEW)
+  status                String                  @default("UNRESOLVED")
+  resolutionNotes       String?                 @db.Text
+  resolvedByUserId      String?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+
+  @@index([jurisdiction, taxYear])
+  @@index([status])
+}
+
+model TaxRuleCandidate {
+  id                     String    @id @default(uuid())
+  candidateRuleId        String    @unique
+  jurisdiction           String
+  taxYear                Int
+  taxDomain              String    @default("INCOME_TAX")
+  topic                  String
+  title                  String
+  description            String    @db.Text
+  conditions             Json      @default("[]")
+  authorityRefs          Json      @default("[]")
+  discoveredByResearchId String?
+  status                 String    @default("CANDIDATE")
+  reviewNotes            String?   @db.Text
+  reviewedByUserId       String?
+  reviewedAt             DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  @@index([jurisdiction, taxYear])
+  @@index([status])
+}
+
+model PropositionNode {
+  id                  String      @id @default(uuid())
+  taxPositionId       String
+  taxPosition         TaxPosition @relation(fields: [taxPositionId], references: [id], onDelete: Cascade)
+  propositionText     String      @db.Text
+  statutoryCitation   String
+  authorityLevel      Int         @default(1)
+  sourceChunkId       String?
+  sourceId            String?
+  ruleId              String?
+  validationStatus    String      @default("UNVERIFIED")
+  verificationDetails Json        @default("{}")
+  createdAt           DateTime    @default(now())
+
+  @@index([taxPositionId])
+  @@index([statutoryCitation])
+}
+
+model OfficialSourceFreshness {
+  id            String          @id @default(uuid())
+  jurisdiction  String
+  citationCode  String
+  taxYear       Int
+  sourceHash    String
+  sourceVersion String          @default("2026.1")
+  lastCheckedAt DateTime        @default(now())
+  lastChangedAt DateTime        @default(now())
+  status        FreshnessStatus @default(CURRENT)
+  checkDetails  Json            @default("{}")
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@unique([jurisdiction, citationCode, taxYear, sourceVersion])
+  @@index([jurisdiction, status])
+}
+
+model ResearchCacheEntry {
+  id             String   @id @default(uuid())
+  cacheKey       String   @unique
+  taxYear        Int
+  jurisdiction   String
+  taxDomain      String
+  topic          String
+  factsHash      String
+  sourceVersion  String   @default("2026.1")
+  ruleSetVersion String   @default("2026.1")
+  cachedResult   Json
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([cacheKey])
+  @@index([expiresAt])
+}
+
 
 
 
